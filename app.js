@@ -34,16 +34,27 @@
     code: "代码",
   };
 
-  const validViews = new Set(["all", "event", "tech", "world-model", "other"]);
+  const validLanes = new Set(["all", ...Object.keys(data.lanes)]);
+  const validTopics = new Set(["all", "not-world-model", ...Object.keys(data.topics)]);
   const initialParams = new URLSearchParams(window.location.search);
   const requestedView = initialParams.get("view");
+  const requestedTopic = initialParams.get("topic");
   const requestedEvent = data.events.find((event) => event.id === initialParams.get("event"));
+  const requestedStory = data.storylines.find((storyline) => storyline.id === initialParams.get("story"));
+  const initialLane = validLanes.has(requestedView) ? requestedView : "all";
+  const initialTopic = validTopics.has(requestedTopic)
+    ? requestedTopic
+    : Object.hasOwn(data.topics, requestedView)
+      ? requestedView
+      : requestedView === "other" ? "not-world-model" : "all";
 
   const state = {
     route: getRoute(),
-    view: validViews.has(requestedView) ? requestedView : "all",
+    lane: initialLane,
+    topic: initialTopic,
     query: initialParams.get("q") || "",
     selectedId: requestedEvent?.id || data.events.find((event) => event.id === "kimi-k3")?.id || data.events.at(-1)?.id,
+    storyId: requestedStory?.id || data.storylines[0]?.id,
     drawerOpen: Boolean(requestedEvent && initialParams.get("open") === "1"),
     timelineHasPosition: false,
     libraryQuery: "",
@@ -65,31 +76,40 @@
 
   function getRoute() {
     const route = window.location.hash.replace("#", "");
-    return ["timeline", "sources", "about"].includes(route) ? route : "timeline";
+    return ["timeline", "stories", "sources", "about"].includes(route) ? route : "timeline";
   }
 
   function readLocationState() {
     const params = new URLSearchParams(window.location.search);
     const nextView = params.get("view");
+    const nextTopic = params.get("topic");
     const nextEvent = data.events.find((event) => event.id === params.get("event"));
+    const nextStory = data.storylines.find((storyline) => storyline.id === params.get("story"));
     state.route = getRoute();
-    state.view = validViews.has(nextView) ? nextView : "all";
+    state.lane = validLanes.has(nextView) ? nextView : "all";
+    state.topic = validTopics.has(nextTopic)
+      ? nextTopic
+      : Object.hasOwn(data.topics, nextView)
+        ? nextView
+        : nextView === "other" ? "not-world-model" : "all";
     state.query = params.get("q") || "";
     if (nextEvent) state.selectedId = nextEvent.id;
+    if (nextStory) state.storyId = nextStory.id;
     state.drawerOpen = Boolean(nextEvent && params.get("open") === "1");
     syncSelectionToVisibleEvents();
   }
 
   function writeLocationState({ historyMode = "replace", open = state.drawerOpen } = {}) {
     const url = new URL(window.location.href);
-    if (state.view === "all") url.searchParams.delete("view");
-    else url.searchParams.set("view", state.view);
-    if (state.query.trim()) url.searchParams.set("q", state.query.trim());
-    else url.searchParams.delete("q");
-    if (state.selectedId) url.searchParams.set("event", state.selectedId);
-    else url.searchParams.delete("event");
-    if (open && state.selectedId) url.searchParams.set("open", "1");
-    else url.searchParams.delete("open");
+    url.search = "";
+    if (state.route === "timeline") {
+      if (state.lane !== "all") url.searchParams.set("view", state.lane);
+      if (state.topic !== "all") url.searchParams.set("topic", state.topic);
+      if (state.query.trim()) url.searchParams.set("q", state.query.trim());
+      if (state.selectedId) url.searchParams.set("event", state.selectedId);
+      if (open && state.selectedId) url.searchParams.set("open", "1");
+    }
+    if (state.route === "stories" && state.storyId) url.searchParams.set("story", state.storyId);
     url.hash = state.route;
     window.history[historyMode === "push" ? "pushState" : "replaceState"](null, "", url);
     updateDocumentMeta();
@@ -97,9 +117,7 @@
 
   function eventPermalink(eventId) {
     const url = new URL(window.location.href);
-    url.searchParams.delete("q");
-    if (state.view === "all") url.searchParams.delete("view");
-    else url.searchParams.set("view", state.view);
+    url.search = "";
     url.searchParams.set("event", eventId);
     url.searchParams.set("open", "1");
     url.hash = "timeline";
@@ -108,9 +126,15 @@
 
   function updateDocumentMeta() {
     const event = getSelectedEvent();
-    const hasExplicitEvent = Boolean(event && new URLSearchParams(window.location.search).has("event"));
-    document.title = hasExplicitEvent ? `${event.title} · AI 世界线` : "AI 世界线";
-    const description = hasExplicitEvent ? event.what : "AI 世界线：一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。";
+    const story = getSelectedStory();
+    const hasExplicitEvent = Boolean(state.route === "timeline" && event && new URLSearchParams(window.location.search).has("event"));
+    const routeTitles = { stories: "故事线 · AI 世界线", sources: "文献库 · AI 世界线", about: "关于 · AI 世界线" };
+    document.title = hasExplicitEvent ? `${event.title} · AI 世界线` : routeTitles[state.route] || "AI 世界线";
+    const description = hasExplicitEvent
+      ? event.what
+      : state.route === "stories" && story
+        ? story.summary
+        : "AI 世界线：一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。";
     document.querySelector('meta[name="description"]')?.setAttribute("content", description);
   }
 
@@ -123,6 +147,18 @@
 
   function getSelectedEvent() {
     return data.events.find((event) => event.id === state.selectedId) || null;
+  }
+
+  function getSelectedStory() {
+    return data.storylines.find((storyline) => storyline.id === state.storyId) || data.storylines[0] || null;
+  }
+
+  function eventHasTopic(event, topicId) {
+    return Array.isArray(event.topics) && event.topics.includes(topicId);
+  }
+
+  function topicLabels(event) {
+    return (event.topics || []).map((topicId) => data.topics[topicId]?.label).filter(Boolean);
   }
 
   function eventMatches(event, query = state.query) {
@@ -138,23 +174,25 @@
   function getPeriodEvents(periodId, type) {
     return sortEvents(data.events.filter((event) => {
       if (event.period !== periodId || event.lane !== type || !eventMatches(event)) return false;
-      if (state.view === "world-model") return event.topic === "world-model";
-      if (state.view === "other") return event.topic !== "world-model";
-      return true;
+      return eventPassesTopic(event);
     }));
   }
 
   function visibleTypes() {
-    if (state.view === "event") return ["event"];
-    if (state.view === "tech") return ["tech"];
+    if (state.lane === "event") return ["event"];
+    if (state.lane === "tech") return ["tech"];
     return ["event", "tech"];
   }
 
-  function eventPassesView(event) {
-    if (state.view === "event" || state.view === "tech") return event.lane === state.view;
-    if (state.view === "world-model") return event.topic === "world-model";
-    if (state.view === "other") return event.topic !== "world-model";
+  function eventPassesTopic(event) {
+    if (state.topic === "not-world-model") return !eventHasTopic(event, "world-model");
+    if (state.topic !== "all") return eventHasTopic(event, state.topic);
     return true;
+  }
+
+  function eventPassesView(event) {
+    const laneMatches = state.lane === "all" || event.lane === state.lane;
+    return laneMatches && eventPassesTopic(event);
   }
 
   function syncSelectionToVisibleEvents() {
@@ -165,6 +203,7 @@
   function render() {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.route === state.route));
     if (state.route === "timeline") renderTimeline();
+    if (state.route === "stories") renderStories();
     if (state.route === "sources") renderLibrary();
     if (state.route === "about") renderAbout();
   }
@@ -176,7 +215,7 @@
         <div class="timeline-main">
           <div class="toolbar">
             <div class="view-switch" role="group" aria-label="选择时间线视角">
-              ${renderViewButton("all", "全部")}${renderViewButton("event", "事件")}${renderViewButton("tech", "技术")}<span class="view-divider" role="separator" aria-hidden="true"></span>${renderViewButton("world-model", "世界模型")}${renderViewButton("other", "其他")}
+              ${renderLaneButton("all", "全部")}${renderLaneButton("event", "事件")}${renderLaneButton("tech", "技术")}<span class="view-divider" role="separator" aria-hidden="true"></span>${Object.entries(data.topics).map(([topicId, topic]) => renderTopicButton(topicId, topic.label)).join("")}${renderTopicButton("not-world-model", "非世界模型")}
             </div>
             <label class="search-box">${icons.search}<input id="timeline-search" type="search" value="${escapeAttr(state.query)}" placeholder="搜索事件、技术或机构" autocomplete="off" /></label>
           </div>
@@ -192,8 +231,13 @@
     positionTimeline();
   }
 
-  function renderViewButton(key, label) {
-    return `<button class="view-button ${state.view === key ? "is-active" : ""}" type="button" data-view="${key}">${label}</button>`;
+  function renderLaneButton(key, label) {
+    return `<button class="view-button ${state.lane === key ? "is-active" : ""}" type="button" data-lane="${key}" aria-pressed="${state.lane === key}">${label}</button>`;
+  }
+
+  function renderTopicButton(key, label) {
+    const active = state.topic === key;
+    return `<button class="view-button ${active ? "is-active" : ""}" type="button" data-topic="${key}" aria-pressed="${active}" title="${active ? "再次点击取消此切面" : `只看${escapeAttr(label)}`}">${escapeHTML(label)}</button>`;
   }
 
   function renderDesktopBoard() {
@@ -215,13 +259,13 @@
 
   function renderTimelineEvent(event, type = event.lane) {
     const date = event.date ? event.date.slice(0, 10) : event.period;
-    return `<button class="event-entry ${event.topic === "world-model" ? "topic-world-model" : ""} ${state.selectedId === event.id ? "is-selected" : ""} ${event.importance === "major" ? "is-major" : ""}" type="button" data-event-id="${escapeAttr(event.id)}" data-event-type="${escapeAttr(type)}" aria-label="查看 ${escapeAttr(event.title)}"><strong>${escapeHTML(event.title)}</strong><span class="event-date">${escapeHTML(date)}</span><span class="event-summary">${escapeHTML(event.short)}</span></button>`;
+    return `<button class="event-entry ${eventHasTopic(event, "world-model") ? "topic-world-model" : ""} ${state.selectedId === event.id ? "is-selected" : ""} ${event.importance === "major" ? "is-major" : ""}" type="button" data-event-id="${escapeAttr(event.id)}" data-event-type="${escapeAttr(type)}" aria-label="查看 ${escapeAttr(event.title)}"><strong>${escapeHTML(event.title)}</strong><span class="event-date">${escapeHTML(date)}</span><span class="event-summary">${escapeHTML(event.short)}</span></button>`;
   }
 
   function renderMobileChronology() {
     const types = visibleTypes();
     const periods = [...data.periods].reverse();
-    return `<div class="mobile-chronology"><div class="mobile-range"><button type="button" data-action="scroll-left">${icons.left}</button><span>2017 H1&nbsp;&nbsp;—&nbsp;&nbsp;2026 H2</span><button type="button" data-action="go-current">${icons.right}</button></div><div class="mobile-periods">${periods.map((period) => { const hasEvents = types.some((type) => getPeriodEvents(period.id, type).length); if (!hasEvents && (state.query || state.view !== "all")) return ""; return `<article class="mobile-period" data-mobile-period="${escapeAttr(period.id)}"><header class="mobile-period-head"><span class="mobile-period-node"></span><h2>${escapeHTML(period.label)}</h2>${period.status === "current" ? "<span>进行中</span>" : ""}</header><div class="mobile-period-body">${types.map((type) => renderMobileGroup(period.id, type)).join("")}</div></article>`; }).join("")}</div></div>`;
+    return `<div class="mobile-chronology"><div class="mobile-range"><button type="button" data-action="scroll-left">${icons.left}</button><span>2017 H1&nbsp;&nbsp;—&nbsp;&nbsp;2026 H2</span><button type="button" data-action="go-current">${icons.right}</button></div><div class="mobile-periods">${periods.map((period) => { const hasEvents = types.some((type) => getPeriodEvents(period.id, type).length); if (!hasEvents && (state.query || state.lane !== "all" || state.topic !== "all")) return ""; return `<article class="mobile-period" data-mobile-period="${escapeAttr(period.id)}"><header class="mobile-period-head"><span class="mobile-period-node"></span><h2>${escapeHTML(period.label)}</h2>${period.status === "current" ? "<span>进行中</span>" : ""}</header><div class="mobile-period-body">${types.map((type) => renderMobileGroup(period.id, type)).join("")}</div></article>`; }).join("")}</div></div>`;
   }
 
   function renderMobileGroup(periodId, type) {
@@ -234,7 +278,8 @@
   function renderSourcePanel(event) {
     if (!event) return `<div class="empty-selection"><strong>选择一个条目</strong><p>原始论文、官方发布和全文链接会在这里展开。</p></div>`;
     const lane = data.lanes[event.lane];
-    return `<div class="source-panel-inner"><div class="source-panel-head"><span>${escapeHTML(lane.label)}${event.topic === "world-model" ? " · 世界模型" : ""}</span></div><h2 class="selection-heading">${escapeHTML(event.title)}</h2><time class="selection-date">${escapeHTML(event.date || event.period)}</time><p class="selection-summary">${escapeHTML(event.what)}</p><div class="source-count">来源（${event.sources.length}）</div><div class="bibliography-list">${event.sources.map(renderBibliographyRow).join("")}</div><div class="source-panel-actions"><button class="source-detail-button" type="button" data-action="open-detail">查看完整条目 ${icons.right}</button><button class="source-link-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button></div></div>`;
+    const topics = topicLabels(event);
+    return `<div class="source-panel-inner"><div class="source-panel-head"><span>${escapeHTML([lane.label, ...topics].join(" · "))}</span></div><h2 class="selection-heading">${escapeHTML(event.title)}</h2><time class="selection-date">${escapeHTML(event.date || event.period)}</time><p class="selection-summary">${escapeHTML(event.what)}</p><div class="source-count">来源（${event.sources.length}）</div><div class="bibliography-list">${event.sources.map(renderBibliographyRow).join("")}</div><div class="source-panel-actions"><button class="source-detail-button" type="button" data-action="open-detail">查看完整条目 ${icons.right}</button><button class="source-link-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button></div></div>`;
   }
 
   function sourceIcon(source) {
@@ -252,7 +297,8 @@
 
   function renderDetailDrawer(event) {
     if (!event) return "";
-    return `<div class="detail-backdrop ${state.drawerOpen ? "is-open" : ""}" data-action="close-detail"></div><aside class="detail-drawer ${state.drawerOpen ? "is-open" : ""}" aria-hidden="${state.drawerOpen ? "false" : "true"}"><div class="drawer-handle" aria-hidden="true"></div><header class="detail-drawer-head"><div><span>${escapeHTML(data.lanes[event.lane].label)}${event.topic === "world-model" ? " · 世界模型" : ""}</span><h2>${escapeHTML(event.title)}</h2><time>${escapeHTML(event.date || event.period)}</time></div><div class="drawer-actions"><button class="icon-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button><button class="icon-button" type="button" data-action="close-detail" aria-label="关闭详情">${icons.close}</button></div></header><div class="detail-body">${renderDetailSection("发生了什么", event.what)}${renderDetailSection("为什么重要", event.why)}${renderDetailSection("它改变了什么", event.changed)}<section class="detail-section"><h3>相关概念</h3><div class="tag-list">${(event.concepts || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><section class="detail-section"><h3>相关机构</h3><div class="tag-list">${(event.orgs || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><div class="detail-source-title">原始来源</div><div class="bibliography-list detail-bibliography">${event.sources.map((source) => renderDetailSource(source, event)).join("")}</div></div></aside>`;
+    const topics = topicLabels(event);
+    return `<div class="detail-backdrop ${state.drawerOpen ? "is-open" : ""}" data-action="close-detail"></div><aside class="detail-drawer ${state.drawerOpen ? "is-open" : ""}" aria-hidden="${state.drawerOpen ? "false" : "true"}"><div class="drawer-handle" aria-hidden="true"></div><header class="detail-drawer-head"><div><span>${escapeHTML([data.lanes[event.lane].label, ...topics].join(" · "))}</span><h2>${escapeHTML(event.title)}</h2><time>${escapeHTML(event.date || event.period)}</time></div><div class="drawer-actions"><button class="icon-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button><button class="icon-button" type="button" data-action="close-detail" aria-label="关闭详情">${icons.close}</button></div></header><div class="detail-body">${renderDetailSection("发生了什么", event.what)}${renderDetailSection("为什么重要", event.why)}${renderDetailSection("它改变了什么", event.changed)}<section class="detail-section"><h3>相关概念</h3><div class="tag-list">${(event.concepts || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><section class="detail-section"><h3>相关机构</h3><div class="tag-list">${(event.orgs || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><div class="detail-source-title">原始来源</div><div class="bibliography-list detail-bibliography">${event.sources.map((source) => renderDetailSource(source, event)).join("")}</div></div></aside>`;
   }
 
   function renderDetailSection(title, content) {
@@ -264,9 +310,10 @@
   }
 
   function bindTimelineEvents() {
-    document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { state.view = button.dataset.view; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
+    document.querySelectorAll("[data-lane]").forEach((button) => button.addEventListener("click", () => { state.lane = button.dataset.lane; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
+    document.querySelectorAll("[data-topic]").forEach((button) => button.addEventListener("click", () => { state.topic = state.topic === button.dataset.topic ? "all" : button.dataset.topic; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
     document.querySelector("#timeline-search")?.addEventListener("input", (event) => { state.query = event.target.value; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ open: false }); renderTimeline(); const search = document.querySelector("#timeline-search"); search?.focus(); search?.setSelectionRange(state.query.length, state.query.length); });
-    document.querySelectorAll("[data-event-id]").forEach((button) => button.addEventListener("click", () => { state.selectedId = button.dataset.eventId; state.drawerOpen = window.innerWidth <= 760; state.timelineHasPosition = true; writeLocationState({ historyMode: "push" }); renderTimeline(); }));
+    document.querySelectorAll("[data-event-id]").forEach((button) => button.addEventListener("click", () => { state.selectedId = button.dataset.eventId; state.drawerOpen = window.innerWidth <= 1050; state.timelineHasPosition = true; writeLocationState({ historyMode: "push" }); renderTimeline(); }));
     bindSharedActions();
   }
 
@@ -330,8 +377,66 @@
 
   function getLibraryRows() {
     const seen = new Set(); const rows = [];
-    data.events.forEach((event) => event.sources.forEach((source) => { const key = source.url || source.fullText; if (seen.has(key)) return; seen.add(key); rows.push({ ...source, eventTitle: event.title, period: event.period, lane: event.lane, topic: event.topic }); }));
+    data.events.forEach((event) => event.sources.forEach((source) => { const key = source.url || source.fullText; if (seen.has(key)) return; seen.add(key); rows.push({ ...source, eventTitle: event.title, period: event.period, lane: event.lane, topics: event.topics }); }));
     return rows;
+  }
+
+  function renderStories() {
+    const story = getSelectedStory();
+    if (!story) {
+      app.innerHTML = `<div class="empty-page">故事线正在整理。</div>`;
+      return;
+    }
+    let nodeIndex = 0;
+    const nodeCount = story.phases.reduce((total, phase) => total + phase.nodes.length, 0);
+    app.innerHTML = `<section class="stories-screen" aria-label="AI 发展故事线">
+      <header class="stories-intro">
+        <h1>三条路径，解释 AI 如何走到今天</h1>
+        <p>时间线告诉你发生了什么；故事线把分散的节点连成因果。</p>
+      </header>
+      <nav class="story-switch" aria-label="选择故事线" role="tablist">
+        ${data.storylines.map((item) => `<button class="story-selector ${item.id === story.id ? "is-active" : ""}" type="button" role="tab" aria-selected="${item.id === story.id}" data-story="${escapeAttr(item.id)}">${escapeHTML(item.title)}</button>`).join("")}
+      </nav>
+      <article class="story-reading" aria-labelledby="story-summary">
+        <h2 id="story-summary">${escapeHTML(story.summary)}</h2>
+        <div class="story-path" style="--story-node-count:${nodeCount}">
+          ${story.phases.map((phase, phaseIndex) => `<section class="story-phase" style="--phase-size:${phase.nodes.length}">
+            <header><span>${escapeHTML(phase.label)}</span></header>
+            <div class="story-nodes">${phase.nodes.map((node) => {
+              const event = data.events.find((item) => item.id === node.event);
+              nodeIndex += 1;
+              if (!event) return "";
+              return `<button class="story-node" type="button" data-story-event="${escapeAttr(event.id)}" aria-label="在时间线查看 ${escapeAttr(event.title)}">
+                <span class="story-node-marker">${nodeIndex}</span>
+                <strong>${escapeHTML(node.label)}</strong>
+                <time>${escapeHTML(event.date.slice(0, 4))}</time>
+                <span class="story-node-note">${escapeHTML(node.note)}</span>
+              </button>`;
+            }).join("")}</div>
+          </section>`).join("")}
+        </div>
+        <footer class="story-conclusion">
+          <h2>${escapeHTML(story.conclusionTitle)}</h2>
+          <p>${escapeHTML(story.conclusion)}</p>
+        </footer>
+      </article>
+    </section>`;
+    document.querySelectorAll("[data-story]").forEach((button) => button.addEventListener("click", () => {
+      state.storyId = button.dataset.story;
+      writeLocationState({ historyMode: "push", open: false });
+      renderStories();
+    }));
+    document.querySelectorAll("[data-story-event]").forEach((button) => button.addEventListener("click", () => {
+      state.selectedId = button.dataset.storyEvent;
+      state.route = "timeline";
+      state.lane = "all";
+      state.topic = "all";
+      state.query = "";
+      state.drawerOpen = true;
+      state.timelineHasPosition = false;
+      writeLocationState({ historyMode: "push", open: true });
+      render();
+    }));
   }
 
   function renderLibrary() {
@@ -344,7 +449,7 @@
   }
 
   function renderAbout() {
-    app.innerHTML = `<section class="about-screen"><header class="page-head"><h1>关于这条线</h1><p>v${escapeHTML(data.meta.version)} · 更新于 ${escapeHTML(data.meta.updatedAt)}。这是一份持续编辑的研究索引，不是宣称完整的 AI 历史。</p></header><div class="about-grid"><div class="about-lead">事件记录产业如何转向。<br>技术记录能力为什么跃迁。</div><div class="about-content"><section><h2>两条主轴</h2><p><strong>事件</strong>收录商业、公司、机构和现象级产品转折；<strong>技术</strong>收录论文、架构、协议、实验室与开源社区的突破。原来的理念并入技术，机构并入事件。</p></section><section><h2>世界模型切面</h2><p>世界模型不是第三条轴，而是横跨事件与技术的专题标签。它同时追踪模型式强化学习、预测表征、可交互生成、具身与机器人、自动驾驶、3D 与空间智能。默认视图将它们混入两条主轴，也可以单独查看世界模型或其他主题。</p></section><section><h2>怎样更新</h2><p>在 <code>data/timeline.json</code> 中追加半年和条目，运行数据生成与校验，再提交变更。每条记录写清“发生了什么 / 为什么重要 / 改变了什么”，并至少附一份论文全文或官方来源。</p></section><section><h2>开放共建</h2><p>项目在 <a href="https://github.com/aprilwang2024/ai-worldline" target="_blank" rel="noopener noreferrer">GitHub</a> 上开放代码、数据与编辑规则。可以提交新事件、补充原始来源或发起事实纠错。</p></section></div></div></section>`;
+    app.innerHTML = `<section class="about-screen"><header class="page-head"><h1>关于这条线</h1><p>v${escapeHTML(data.meta.version)} · 更新于 ${escapeHTML(data.meta.updatedAt)}。这是一份持续编辑的研究索引，不是宣称完整的 AI 历史。</p></header><div class="about-grid"><div class="about-lead">事件记录产业如何转向。<br>技术记录能力为什么跃迁。</div><div class="about-content"><section><h2>两条主轴</h2><p><strong>事件</strong>收录商业、公司、机构和现象级产品转折；<strong>技术</strong>收录论文、架构、协议、实验室与开源社区的突破。原来的理念并入技术，机构并入事件。</p></section><section><h2>可叠加切面</h2><p>世界模型、Agent 软件与 MoE 都是横跨两条主轴的专题标签。同一个条目可以同时属于多个切面；筛选只是重新观察同一段历史，不会制造互相隔离的第三条轴。</p></section><section><h2>故事线</h2><p>故事线从已有事件中选出关键节点，补上阶段与因果关系。它不增加新闻数量，而是解释能力、产品和基础设施为什么沿着某条路径发生变化。</p></section><section><h2>怎样更新</h2><p>在 <code>data/timeline.json</code> 中追加半年和条目，运行数据生成与校验，再提交变更。每条记录写清“发生了什么 / 为什么重要 / 改变了什么”，并至少附一份论文全文或官方来源。</p></section><section><h2>开放共建</h2><p>项目在 <a href="https://github.com/aprilwang2024/ai-worldline" target="_blank" rel="noopener noreferrer">GitHub</a> 上开放代码、数据与编辑规则。可以提交新事件、补充原始来源或发起事实纠错。</p></section></div></div></section>`;
   }
 
   document.querySelectorAll("[data-route]").forEach((button) => button.addEventListener("click", () => {
@@ -367,7 +472,10 @@
   window.addEventListener("keydown", (event) => { if (event.key !== "Escape") return; if (state.drawerOpen) { state.drawerOpen = false; writeLocationState({ open: false }); renderTimeline(); } else mobileNav?.classList.remove("is-open"); });
 
   if (!window.location.hash) window.history.replaceState(null, "", "#timeline");
-  if (requestedEvent && !eventPassesView(requestedEvent)) state.view = "all";
+  if (requestedEvent && !eventPassesView(requestedEvent)) {
+    state.lane = "all";
+    state.topic = "all";
+  }
   syncSelectionToVisibleEvents();
   updateDocumentMeta();
   render();

@@ -7,7 +7,7 @@ window.AI_WORLDLINE_DATA = {
   "$schema": "./schema.json",
   "meta": {
     "title": "AI 世界线",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "updatedAt": "2026-09-02",
     "currentPeriod": "2026-H2",
     "scope": "A curated, source-first timeline of the modern foundation-model, agent, and world-model era."
@@ -38,8 +38,233 @@ window.AI_WORLDLINE_DATA = {
       "caption": "稀疏激活与专家路由",
       "color": "#6657c8",
       "soft": "#f0edff"
+    },
+    "agentic-software": {
+      "label": "Agent 软件",
+      "caption": "从编程助手、工具协议到可持续运行的 Agent 系统",
+      "color": "#135fd1",
+      "soft": "#eaf1ff"
     }
   },
+  "storylines": [
+    {
+      "id": "language-models-to-agents",
+      "title": "语言模型如何变成行动者",
+      "summary": "从预测下一个词，到调用工具、保持状态并进入真实工作。",
+      "conclusionTitle": "这条线真正改变了什么",
+      "conclusion": "模型不再只是回答问题，而是开始在环境里完成工作。",
+      "phases": [
+        {
+          "label": "表示",
+          "nodes": [
+            {
+              "event": "attention-is-all-you-need",
+              "label": "Attention",
+              "note": "注意力让模型在序列中按需连接信息。"
+            },
+            {
+              "event": "gpt-3",
+              "label": "GPT-3",
+              "note": "规模化预训练展现通用任务迁移能力。"
+            }
+          ]
+        },
+        {
+          "label": "对齐",
+          "nodes": [
+            {
+              "event": "instructgpt",
+              "label": "InstructGPT",
+              "note": "人类反馈把续写模型变成可协作助手。"
+            }
+          ]
+        },
+        {
+          "label": "行动",
+          "nodes": [
+            {
+              "event": "react",
+              "label": "ReAct",
+              "note": "推理轨迹与外部行动第一次形成循环。"
+            },
+            {
+              "event": "function-calling",
+              "label": "Function Calling",
+              "note": "模型用结构化参数可靠调用外部能力。"
+            },
+            {
+              "event": "mcp",
+              "label": "MCP",
+              "note": "工具与上下文接入开始拥有共同协议。"
+            }
+          ]
+        },
+        {
+          "label": "运行时",
+          "nodes": [
+            {
+              "event": "agent-skills",
+              "label": "Agent Skills",
+              "note": "专业方法被封装为可复用的运行时能力。"
+            },
+            {
+              "event": "effective-harnesses",
+              "label": "Harness",
+              "note": "状态、测试与反馈机制决定 Agent 的可靠性。"
+            },
+            {
+              "event": "managed-agents",
+              "label": "Managed Agents",
+              "note": "Session、Harness 与 Sandbox 成为基础设施。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coding-as-agent-workplace",
+      "title": "编程为什么成为 Agent 的第一个原生工作场",
+      "summary": "代码天然拥有目标、反馈、测试和版本历史，让 Agent 能够闭环工作。",
+      "conclusionTitle": "为什么第一个工作场是代码",
+      "conclusion": "编程环境把任务、工具与可验证反馈放在一起，最早让模型从建议者变成执行者。",
+      "phases": [
+        {
+          "label": "新范式",
+          "nodes": [
+            {
+              "event": "software-2",
+              "label": "Software 2.0",
+              "note": "软件的一部分开始由数据和训练塑造。"
+            }
+          ]
+        },
+        {
+          "label": "结对",
+          "nodes": [
+            {
+              "event": "github-copilot",
+              "label": "GitHub Copilot",
+              "note": "代码生成第一次进入日常编辑器工作流。"
+            },
+            {
+              "event": "codex-paper",
+              "label": "Codex",
+              "note": "自然语言与可执行代码形成稳定映射。"
+            }
+          ]
+        },
+        {
+          "label": "编辑器",
+          "nodes": [
+            {
+              "event": "cursor-breakout",
+              "label": "Cursor",
+              "note": "AI 原生编辑器把上下文与修改动作连起来。"
+            },
+            {
+              "event": "vibe-coding",
+              "label": "Vibe Coding",
+              "note": "描述意图开始替代部分手写实现。"
+            }
+          ]
+        },
+        {
+          "label": "Agent 工作场",
+          "nodes": [
+            {
+              "event": "claude-code",
+              "label": "Claude Code",
+              "note": "终端中的 Agent 可以搜索、修改并验证代码。"
+            },
+            {
+              "event": "codex-agent",
+              "label": "Codex Cloud",
+              "note": "编码任务转向隔离环境中的异步执行。"
+            },
+            {
+              "event": "harness-design",
+              "label": "Harness Engineering",
+              "note": "工作制度与反馈回路成为性能杠杆。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "models-learn-the-world",
+      "title": "模型为什么开始学习世界",
+      "summary": "从在潜在空间里想象，到预测抽象状态并实时生成可交互环境。",
+      "conclusionTitle": "世界不再只是输出内容",
+      "conclusion": "当模型能够预测行动之后的世界，它就同时成为训练环境、规划器与新型创作介质。",
+      "phases": [
+        {
+          "label": "想象中学习",
+          "nodes": [
+            {
+              "event": "world-models",
+              "label": "World Models",
+              "note": "Agent 首次在学出来的环境内部训练策略。"
+            },
+            {
+              "event": "dreamer",
+              "label": "Dreamer",
+              "note": "潜在动力学开始支撑高效的策略学习。"
+            },
+            {
+              "event": "dreamerv2",
+              "label": "DreamerV2",
+              "note": "离散潜在状态连接了控制与 token 建模。"
+            }
+          ]
+        },
+        {
+          "label": "预测抽象",
+          "nodes": [
+            {
+              "event": "jepa-blueprint",
+              "label": "JEPA",
+              "note": "预测目标从像素转向可规划的抽象表示。"
+            },
+            {
+              "event": "v-jepa",
+              "label": "V-JEPA",
+              "note": "视频中的可预测结构成为世界知识来源。"
+            }
+          ]
+        },
+        {
+          "label": "生成世界",
+          "nodes": [
+            {
+              "event": "genie-1",
+              "label": "Genie",
+              "note": "互联网视频被学习为可行动的平台世界。"
+            },
+            {
+              "event": "oasis",
+              "label": "Oasis",
+              "note": "实时可操作世界第一次成为大众体验。"
+            }
+          ]
+        },
+        {
+          "label": "通用模拟",
+          "nodes": [
+            {
+              "event": "nvidia-cosmos",
+              "label": "Cosmos",
+              "note": "世界模型被定位为 Physical AI 基础设施。"
+            },
+            {
+              "event": "genie-3",
+              "label": "Genie 3",
+              "note": "开放场景进入实时、持续和可提示交互。"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "periods": [
     {
       "id": "2017-H1",
@@ -153,7 +378,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/1706.03762",
           "fullText": "https://arxiv.org/pdf/1706.03762"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "software-2",
@@ -180,6 +406,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "essay",
           "url": "https://karpathy.medium.com/software-2-0-a64152b37c35"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -187,7 +416,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2017-H1",
       "date": "2017-01-23",
       "lane": "tech",
-      "topic": "moe",
       "importance": "major",
       "title": "稀疏门控 MoE",
       "short": "只激活部分专家，容量不再等于计算量",
@@ -212,6 +440,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://research.google/pubs/outrageously-large-neural-networks-the-sparsely-gated-mixture-of-experts-layer/",
           "fullText": "https://arxiv.org/pdf/1701.06538"
         }
+      ],
+      "topics": [
+        "moe"
       ]
     },
     {
@@ -240,7 +471,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "paper",
           "url": "https://doi.org/10.1038/nature24270"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "gpt-1",
@@ -269,7 +501,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf",
           "fullText": "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "bert",
@@ -298,14 +531,14 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/1810.04805",
           "fullText": "https://arxiv.org/pdf/1810.04805"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "world-models",
       "period": "2018-H1",
       "date": "2018-03-27",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "World Models",
       "short": "Agent 开始在自己学到的世界里想象未来",
@@ -332,6 +565,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://worldmodels.github.io/",
           "fullText": "https://arxiv.org/pdf/1803.10122"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -359,7 +595,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/better-language-models/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "t5",
@@ -387,7 +624,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/1910.10683",
           "fullText": "https://arxiv.org/pdf/1910.10683"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "scaling-laws",
@@ -416,14 +654,14 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2001.08361",
           "fullText": "https://arxiv.org/pdf/2001.08361"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "dreamer",
       "period": "2019-H2",
       "date": "2019-12-06",
       "lane": "tech",
-      "topic": "world-model",
       "title": "Dreamer",
       "short": "在潜在世界中想象并学习行为",
       "what": "Dreamer 通过世界模型想象未来轨迹，并直接沿想象轨迹传播价值梯度来学习策略。",
@@ -447,6 +685,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://danijar.com/project/dreamer/",
           "fullText": "https://arxiv.org/pdf/1912.01603"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -477,7 +718,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2005.14165",
           "fullText": "https://arxiv.org/pdf/2005.14165"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "rag",
@@ -505,7 +747,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2005.11401",
           "fullText": "https://arxiv.org/pdf/2005.11401"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "gpt-3-api-wave",
@@ -533,7 +776,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/openai-api/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "dall-e-clip",
@@ -568,7 +812,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/clip/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "github-copilot",
@@ -599,6 +844,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://github.blog/news-insights/product-news/introducing-github-copilot-ai-pair-programmer/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -606,7 +854,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2021-H1",
       "date": "2021-01-11",
       "lane": "tech",
-      "topic": "moe",
       "importance": "major",
       "title": "Switch Transformer",
       "short": "Top-1 路由把 MoE 推到万亿参数",
@@ -630,6 +877,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2101.03961",
           "fullText": "https://arxiv.org/pdf/2101.03961"
         }
+      ],
+      "topics": [
+        "moe"
       ]
     },
     {
@@ -660,7 +910,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2108.07258",
           "fullText": "https://arxiv.org/pdf/2108.07258"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "codex-paper",
@@ -688,6 +939,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2107.03374",
           "fullText": "https://arxiv.org/pdf/2107.03374"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -695,7 +949,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2021-H2",
       "date": "2021-12-08",
       "lane": "tech",
-      "topic": "moe",
       "title": "GLaM",
       "short": "1.2T 总参数，每次只激活约 8%",
       "what": "Google 发布 GLaM，以 64 个专家和 top-2 路由构建 1.2T 参数语言模型，每个 token 实际激活约 97B 参数。",
@@ -725,6 +978,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.research.google/blog/more-efficient-in-context-learning-with-glam/"
         }
+      ],
+      "topics": [
+        "moe"
       ]
     },
     {
@@ -753,7 +1009,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2203.15556",
           "fullText": "https://arxiv.org/pdf/2203.15556"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "instructgpt",
@@ -783,7 +1040,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2203.02155",
           "fullText": "https://arxiv.org/pdf/2203.02155"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "dall-e-2",
@@ -811,7 +1069,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/dall-e-2/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "stable-diffusion",
@@ -841,7 +1100,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://stability.ai/news-updates/stable-diffusion-public-release"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "react",
@@ -872,6 +1132,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2210.03629",
           "fullText": "https://arxiv.org/pdf/2210.03629"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -902,7 +1165,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/chatgpt/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "llama-1",
@@ -931,14 +1195,14 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2302.13971",
           "fullText": "https://arxiv.org/pdf/2302.13971"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "dreamerv3",
       "period": "2023-H1",
       "date": "2023-01-10",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "DreamerV3",
       "short": "一套配置跨越 150 多种任务",
@@ -963,6 +1227,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2301.04104",
           "fullText": "https://arxiv.org/pdf/2301.04104"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1001,7 +1268,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.anthropic.com/news/introducing-claude"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "autogpt",
@@ -1029,6 +1297,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/Significant-Gravitas/AutoGPT"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1057,6 +1328,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/function-calling-and-other-api-updates/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1093,7 +1367,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "paper",
           "url": "https://ai.meta.com/research/publications/llama-2-open-foundation-and-fine-tuned-chat-models/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "llm-app-stack",
@@ -1122,14 +1397,14 @@ window.AI_WORLDLINE_DATA = {
           "type": "retrospective",
           "url": "https://www.langchain.com/blog/langchain-second-birthday"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "mixtral",
       "period": "2023-H2",
       "date": "2023-12-11",
       "lane": "tech",
-      "topic": "moe",
       "importance": "major",
       "title": "Mixtral 8×7B",
       "short": "开放 MoE 把稀疏架构带进开发者生态",
@@ -1153,6 +1428,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2401.04088",
           "fullText": "https://arxiv.org/pdf/2401.04088"
         }
+      ],
+      "topics": [
+        "moe"
       ]
     },
     {
@@ -1180,6 +1458,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/new-models-and-developer-products-announced-at-devday/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1187,7 +1468,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H1",
       "date": "2024-02-15",
       "lane": "event",
-      "topic": "world-model",
       "title": "Sora 预览",
       "short": "视频生成成为下一种模型奇观",
       "what": "OpenAI 展示从文本生成长达一分钟视频的 Sora 研究预览。",
@@ -1208,6 +1488,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/video-generation-models-as-world-simulators/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1215,7 +1498,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H1",
       "date": "2024-01-11",
       "lane": "tech",
-      "topic": "moe",
       "importance": "major",
       "title": "DeepSeekMoE",
       "short": "共享专家与细粒度专家分工",
@@ -1239,6 +1521,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2401.06066",
           "fullText": "https://arxiv.org/pdf/2401.06066"
         }
+      ],
+      "topics": [
+        "moe"
       ]
     },
     {
@@ -1246,7 +1531,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H1",
       "date": "2024-02-23",
       "lane": "tech",
-      "topic": "world-model",
       "title": "Genie",
       "short": "从无动作标注的视频学出可交互世界",
       "what": "Google DeepMind 发布 11B 参数的 Genie，从互联网游戏视频中同时学习视觉表示、环境动力学和潜在动作。",
@@ -1269,6 +1553,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://deepmind.google/research/publications/60474/",
           "fullText": "https://arxiv.org/pdf/2402.15391"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1298,7 +1585,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/hello-gpt-4o/"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "claude-artifacts",
@@ -1327,7 +1615,8 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.anthropic.com/news/claude-3-5-sonnet"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "cursor-breakout",
@@ -1365,6 +1654,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.cursor.com/blog/shadow-workspace"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1402,7 +1694,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://cdn.openai.com/o1-preview-system-card-20240917.pdf",
           "fullText": "https://cdn.openai.com/o1-preview-system-card-20240917.pdf"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "mcp",
@@ -1439,6 +1732,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "documentation",
           "url": "https://modelcontextprotocol.io/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1467,6 +1763,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/building-effective-agents"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1474,7 +1773,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H2",
       "date": "2024-12-04",
       "lane": "event",
-      "topic": "world-model",
       "title": "Genie 2",
       "short": "一张图生成可玩的 3D 训练环境",
       "what": "Google DeepMind 展示可从单张提示图生成动作可控、可由人或 Agent 操作的 3D 环境。",
@@ -1496,6 +1794,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://deepmind.google/blog/genie-2-a-large-scale-foundation-world-model/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1533,7 +1834,8 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2501.12948",
           "fullText": "https://arxiv.org/pdf/2501.12948"
         }
-      ]
+      ],
+      "topics": []
     },
     {
       "id": "vibe-coding",
@@ -1565,6 +1867,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "talk",
           "url": "https://www.youtube.com/watch?v=LCEmiRjPEtQ"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1594,6 +1899,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.anthropic.com/news/claude-3-7-sonnet"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1622,6 +1930,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/introducing-deep-research/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1651,6 +1962,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://press.aboutamazon.com/aws/2025/12/manus-selects-aws-to-power-general-purpose-ai-agent-serving-millions-globally"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1688,6 +2002,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/google-cloud-next-25-recap/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1716,6 +2033,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://openai.com/index/introducing-codex/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1746,6 +2066,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1776,6 +2099,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1783,7 +2109,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H2",
       "date": "2025-08-05",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "Genie 3",
       "short": "实时生成可导航的通用世界",
@@ -1813,6 +2138,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "documentation",
           "url": "https://deepmind.google/models/genie/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1820,7 +2148,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H2",
       "date": "2025-09-30",
       "lane": "event",
-      "topic": "world-model",
       "title": "Sora 2",
       "short": "视频模型开始更可靠地模拟失败与物理后果",
       "what": "OpenAI 发布 Sora 2，强调更准确的物理行为、状态持续、多镜头控制以及同步声音。",
@@ -1850,6 +2177,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://cdn.openai.com/pdf/50d5973c-c4ff-4c2d-986f-c72b5d0ff069/sora_2_system_card.pdf",
           "fullText": "https://cdn.openai.com/pdf/50d5973c-c4ff-4c2d-986f-c72b5d0ff069/sora_2_system_card.pdf"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -1878,6 +2208,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://lovable.dev/blog/agent"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1907,6 +2240,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1935,6 +2271,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.anthropic.com/news/introducing-anthropic-labs"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -1981,6 +2320,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "reporting",
           "url": "https://apnews.com/article/31af42ccbb04001dd17a3fc7067d1de3"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2019,6 +2361,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2602.07432",
           "fullText": "https://arxiv.org/pdf/2602.07432"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2050,6 +2395,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/harness-design-long-running-apps"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2079,6 +2427,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "engineering",
           "url": "https://www.anthropic.com/engineering/managed-agents"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2108,6 +2459,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "documentation",
           "url": "https://docs.nvidia.com/nemoclaw/user-guide/openclaw/home/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2149,6 +2503,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2605.18747",
           "fullText": "https://arxiv.org/pdf/2605.18747"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     },
     {
@@ -2156,7 +2513,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H2",
       "date": "2026-07-16",
       "lane": "event",
-      "topic": "moe",
       "importance": "major",
       "title": "Kimi K3",
       "short": "2.8T 级开放原生多模态 Agent 模型",
@@ -2197,6 +2553,10 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/MoonshotAI/Kimi-K3"
         }
+      ],
+      "topics": [
+        "moe",
+        "agentic-software"
       ]
     },
     {
@@ -2204,7 +2564,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2018-H2",
       "date": "2018-11-12",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "PlaNet",
       "short": "从像素学习动力学，并直接在潜在空间规划",
@@ -2231,6 +2590,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/1811.04551",
           "fullText": "https://arxiv.org/pdf/1811.04551"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2238,7 +2600,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2019-H2",
       "date": "2019-11-19",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "MuZero",
       "short": "不知道规则，也能学模型并向前搜索",
@@ -2270,6 +2631,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://deepmind.google/blog/muzero-mastering-go-chess-shogi-and-atari-without-rules/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2277,7 +2641,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2020-H2",
       "date": "2020-10-05",
       "lane": "tech",
-      "topic": "world-model",
       "title": "DreamerV2",
       "short": "离散潜在世界首次在 Atari 55 项达到人类水平",
       "what": "DreamerV2 用离散潜在状态学习视觉世界，并让策略完全从世界模型的预测中学习行为。",
@@ -2303,6 +2666,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2010.02193",
           "fullText": "https://arxiv.org/pdf/2010.02193"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2310,7 +2676,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2021-H2",
       "date": "2021-10-30",
       "lane": "tech",
-      "topic": "world-model",
       "title": "EfficientZero",
       "short": "两小时游戏数据把模型式 RL 推过人类基线",
       "what": "EfficientZero 在 MuZero 框架上加入自监督表征、端到端价值前缀预测与离线数据校正，提高有限交互下的规划质量。",
@@ -2342,6 +2707,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/YeWR/EfficientZero"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2349,7 +2717,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2022-H1",
       "date": "2022-06-27",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "JEPA 世界模型路线图",
       "short": "预测抽象表征，而不是穷举像素细节",
@@ -2376,6 +2743,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://openreview.net/forum?id=BZ5a1r-kVsf",
           "fullText": "https://openreview.net/pdf?id=BZ5a1r-kVsf"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2383,7 +2753,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2022-H2",
       "date": "2022-09-01",
       "lane": "tech",
-      "topic": "world-model",
       "title": "IRIS",
       "short": "Transformer 进入样本高效世界模型",
       "what": "IRIS 用离散自编码器压缩画面，再让自回归 Transformer 学习潜在世界的时间演化。",
@@ -2414,6 +2783,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/eloialonso/iris"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2421,7 +2793,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2023-H1",
       "date": "2023-01-19",
       "lane": "tech",
-      "topic": "world-model",
       "title": "I-JEPA",
       "short": "在抽象表示中预测图像缺失部分",
       "what": "I-JEPA 从一个图像上下文块预测其他区域的高层表示，不依赖像素重建或人工数据增强。",
@@ -2452,6 +2823,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://ai.meta.com/blog/yann-lecun-ai-model-i-jepa/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2459,7 +2833,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2023-H1",
       "date": "2023-06-17",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "GAIA-1",
       "short": "自动驾驶有了视频、文本与动作共同驱动的世界模型",
@@ -2491,6 +2864,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2309.17080",
           "fullText": "https://arxiv.org/pdf/2309.17080"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2498,7 +2874,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2023-H2",
       "date": "2023-10-09",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "UniSim",
       "short": "让 Agent 在学出来的真实世界模拟器里训练",
@@ -2532,6 +2907,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2310.06114",
           "fullText": "https://arxiv.org/pdf/2310.06114"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2539,7 +2917,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2023-H2",
       "date": "2023-10-25",
       "lane": "tech",
-      "topic": "world-model",
       "title": "TD-MPC2",
       "short": "隐式世界模型开始随模型与数据规模扩展",
       "what": "TD-MPC2 在不解码像素的潜在世界模型中做局部轨迹优化，用统一超参数覆盖 104 个连续控制任务。",
@@ -2571,6 +2948,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://www.tdmpc2.com/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2578,7 +2958,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H1",
       "date": "2024-02-15",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "V-JEPA",
       "short": "同一天，世界模型出现与 Sora 相反的预测哲学",
@@ -2617,6 +2996,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/facebookresearch/jepa"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2624,7 +3006,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H2",
       "date": "2024-08-27",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "GameNGen",
       "short": "扩散模型第一次实时充当完整游戏引擎",
@@ -2658,6 +3039,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2408.14837",
           "fullText": "https://arxiv.org/pdf/2408.14837"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2665,7 +3049,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H2",
       "date": "2024-10-31",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "Oasis 爆火",
       "short": "AI 实时生成一个可以直接玩的开放世界",
@@ -2697,6 +3080,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://oasis.decart.ai/introduction"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2704,7 +3090,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2024-H2",
       "date": "2024-12-02",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "World Labs 展示生成 3D 世界",
       "short": "从单张图片走进持久、可导航的空间",
@@ -2729,6 +3114,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.worldlabs.ai/blog/generating-worlds"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2736,7 +3124,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H1",
       "date": "2025-01-06",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "NVIDIA Cosmos",
       "short": "世界基础模型被包装成 Physical AI 开放平台",
@@ -2772,6 +3159,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2501.03575",
           "fullText": "https://arxiv.org/pdf/2501.03575"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2779,7 +3169,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H1",
       "date": "2025-02-19",
       "lane": "event",
-      "topic": "world-model",
       "title": "Microsoft Muse / WHAM",
       "short": "世界模型开始辅助游戏创意与玩法原型",
       "what": "Microsoft Research 与 Ninja Theory 发布 Muse，一个可生成游戏画面、控制器动作或两者的 World and Human Action Model。",
@@ -2812,6 +3201,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://www.nature.com/articles/s41586-025-08600-3",
           "fullText": "https://www.nature.com/articles/s41586-025-08600-3.pdf"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2819,7 +3211,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H1",
       "date": "2025-05-19",
       "lane": "tech",
-      "topic": "world-model",
       "title": "DreamGen",
       "short": "把视频世界模型变成机器人数据工厂",
       "what": "DreamGen 用视频世界模型生成新任务与新环境中的机器人视频，再用潜在动作模型或逆动力学模型恢复伪动作。",
@@ -2851,6 +3242,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://arxiv.org/abs/2505.12705",
           "fullText": "https://arxiv.org/pdf/2505.12705"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2858,7 +3252,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H1",
       "date": "2025-06-11",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "V-JEPA 2",
       "short": "从百万小时视频观察，走到零样本机器人规划",
@@ -2897,6 +3290,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/facebookresearch/vjepa2"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2904,7 +3300,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H2",
       "date": "2025-07-26",
       "lane": "tech",
-      "topic": "world-model",
       "importance": "major",
       "title": "HunyuanWorld 1.0 开源",
       "short": "文字或图片生成可探索、可导出的 3D 世界",
@@ -2936,6 +3331,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://3d-models.hunyuan.tencent.com/world/HY_World_1_technical_report.pdf",
           "fullText": "https://3d-models.hunyuan.tencent.com/world/HY_World_1_technical_report.pdf"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2943,7 +3341,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H2",
       "date": "2025-08-18",
       "lane": "tech",
-      "topic": "world-model",
       "title": "Matrix-Game 2.0",
       "short": "开源世界模型达到 25 FPS 流式交互",
       "what": "Skywork AI 发布动作条件的流式互动世界模型，以少步自回归扩散实时生成分钟级视频。",
@@ -2974,6 +3371,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/SkyworkAI/Matrix-Game"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -2981,7 +3381,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2025-H2",
       "date": "2025-11-12",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "Marble 向公众开放",
       "short": "多模态 3D 世界模型成为可以直接使用的产品",
@@ -3012,6 +3411,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "documentation",
           "url": "https://docs.worldlabs.ai/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3019,7 +3421,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H1",
       "date": "2026-04-16",
       "lane": "tech",
-      "topic": "world-model",
       "title": "HY-World 2.0",
       "short": "开放 3D 世界模型把生成与重建放进同一体系",
       "what": "腾讯混元发布 HY-World 2.0，升级世界生成与 WorldMirror 通用 3D 预测，覆盖多视图/视频重建和可探索世界。",
@@ -3050,6 +3451,9 @@ window.AI_WORLDLINE_DATA = {
           "url": "https://3d-models.hunyuan.tencent.com/world/world2_0/HY_World_2_0.pdf",
           "fullText": "https://3d-models.hunyuan.tencent.com/world/world2_0/HY_World_2_0.pdf"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3057,7 +3461,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H1",
       "date": "2026-05-31",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "title": "NVIDIA Cosmos 3",
       "short": "理解、生成、仿真和动作被统一进开放 omni 模型",
@@ -3097,6 +3500,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/nvidia/cosmos"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3104,7 +3510,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H2",
       "date": "2026-08-03",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "status": "watching",
       "title": "Wayve GAIA-4",
@@ -3129,6 +3534,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://wayve.ai/thinking/gaia-4/"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3136,7 +3544,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H2",
       "date": "2026-08-30",
       "lane": "tech",
-      "topic": "world-model",
       "status": "watching",
       "title": "Matrix-Game 3.5",
       "short": "几何记忆补上实时世界的长期一致性",
@@ -3168,6 +3575,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "code",
           "url": "https://github.com/SkyworkAI/Matrix-Game"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3175,7 +3585,6 @@ window.AI_WORLDLINE_DATA = {
       "period": "2026-H2",
       "date": "2026-09-01",
       "lane": "event",
-      "topic": "world-model",
       "importance": "major",
       "status": "watching",
       "title": "World Labs Atlas",
@@ -3200,6 +3609,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "official",
           "url": "https://www.worldlabs.ai/blog/atlas"
         }
+      ],
+      "topics": [
+        "world-model"
       ]
     },
     {
@@ -3240,6 +3652,9 @@ window.AI_WORLDLINE_DATA = {
           "type": "documentation",
           "url": "https://docs.nvidia.com/nemoclaw/user-guide/openclaw/home/"
         }
+      ],
+      "topics": [
+        "agentic-software"
       ]
     }
   ]

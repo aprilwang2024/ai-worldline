@@ -41,7 +41,8 @@ Choose **Suggest an event** if you have the evidence but do not want to edit the
 - `id` is stable, lowercase kebab-case.
 - `period` matches the event date.
 - `lane` is either `event` or `tech`.
-- `topic` is optional and refers to a defined cross-cutting topic.
+- `topics` is an array of zero or more defined cross-cutting topics; use multiple topics when an event genuinely belongs to more than one slice.
+- storyline nodes reference existing event IDs and add a causal note instead of duplicating the event record.
 - `short` works as a one-line timeline label.
 - `what`, `why`, and `changed` make distinct claims.
 - at least one source is present, preferably primary.

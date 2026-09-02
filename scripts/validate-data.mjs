@@ -67,7 +67,15 @@ export function validateTimeline(data) {
     if (event?.id && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.id)) errors.push(`${path}.id must be kebab-case`);
     if (event?.period && !periodIds.has(event.period)) errors.push(`${path}.period references unknown period ${event.period}`);
     if (event?.lane && !laneIds.has(event.lane)) errors.push(`${path}.lane references unknown lane ${event.lane}`);
-    if (event?.topic && !topicIds.has(event.topic)) errors.push(`${path}.topic references unknown topic ${event.topic}`);
+    if (!Array.isArray(event?.topics)) errors.push(`${path}.topics must be an array`);
+    else {
+      const uniqueTopics = new Set(event.topics);
+      if (uniqueTopics.size !== event.topics.length) errors.push(`${path}.topics must not contain duplicates`);
+      event.topics.forEach((topic) => {
+        if (!topicIds.has(topic)) errors.push(`${path}.topics references unknown topic ${topic}`);
+      });
+    }
+    if (Object.hasOwn(event || {}, "topic")) errors.push(`${path}.topic is deprecated; use topics[]`);
     if (event?.date && !/^\d{4}-\d{2}-\d{2}$/.test(event.date)) errors.push(`${path}.date must match YYYY-MM-DD`);
 
     if (!Array.isArray(event?.concepts)) errors.push(`${path}.concepts must be an array`);
@@ -89,6 +97,39 @@ export function validateTimeline(data) {
     });
   });
 
+  const storylines = Array.isArray(data.storylines) ? data.storylines : [];
+  if (!storylines.length) errors.push("storylines must contain at least one storyline");
+  const storylineIds = new Set();
+  storylines.forEach((storyline, index) => {
+    const path = `storylines[${index}]`;
+    ["id", "title", "summary", "conclusionTitle", "conclusion"].forEach((key) => {
+      requireText(storyline?.[key], `${path}.${key}`, errors);
+    });
+    if (storylineIds.has(storyline?.id)) errors.push(`${path}.id duplicates ${storyline.id}`);
+    storylineIds.add(storyline?.id);
+    if (storyline?.id && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storyline.id)) errors.push(`${path}.id must be kebab-case`);
+    if (!Array.isArray(storyline?.phases) || !storyline.phases.length) {
+      errors.push(`${path}.phases must contain at least one phase`);
+      return;
+    }
+    const referencedEvents = new Set();
+    storyline.phases.forEach((phase, phaseIndex) => {
+      const phasePath = `${path}.phases[${phaseIndex}]`;
+      requireText(phase?.label, `${phasePath}.label`, errors);
+      if (!Array.isArray(phase?.nodes) || !phase.nodes.length) {
+        errors.push(`${phasePath}.nodes must contain at least one node`);
+        return;
+      }
+      phase.nodes.forEach((node, nodeIndex) => {
+        const nodePath = `${phasePath}.nodes[${nodeIndex}]`;
+        ["event", "label", "note"].forEach((key) => requireText(node?.[key], `${nodePath}.${key}`, errors));
+        if (node?.event && !eventIds.has(node.event)) errors.push(`${nodePath}.event references unknown event ${node.event}`);
+        if (referencedEvents.has(node?.event)) errors.push(`${nodePath}.event duplicates ${node.event} within the storyline`);
+        referencedEvents.add(node?.event);
+      });
+    });
+  });
+
   return errors;
 }
 
@@ -107,8 +148,8 @@ async function main() {
   }
 
   const sourceUrls = new Set(data.events.flatMap((event) => event.sources.map((source) => source.url || source.fullText)));
-  const worldModels = data.events.filter((event) => event.topic === "world-model");
-  console.log(`Validated ${data.events.length} events, ${sourceUrls.size} sources, ${worldModels.length} world-model entries.`);
+  const worldModels = data.events.filter((event) => event.topics.includes("world-model"));
+  console.log(`Validated ${data.events.length} events, ${sourceUrls.size} sources, ${worldModels.length} world-model entries, and ${data.storylines.length} storylines.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

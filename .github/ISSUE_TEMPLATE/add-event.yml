@@ -32,10 +32,10 @@ body:
     validations:
       required: true
   - type: input
-    id: topic
+    id: topics
     attributes:
-      label: Cross-cutting topic
-      description: Optional. Use an existing topic such as world-model, or explain why a new topic is needed.
+      label: Cross-cutting topics
+      description: Optional. List existing topics such as world-model, agentic-software, or moe; explain why a new topic is needed.
   - type: textarea
     id: case
     attributes:

@@ -3,7 +3,7 @@
   "$id": "https://ai-worldline.dev/schema/timeline.schema.json",
   "title": "AI Worldline timeline data",
   "type": "object",
-  "required": ["meta", "lanes", "topics", "periods", "events"],
+  "required": ["meta", "lanes", "topics", "storylines", "periods", "events"],
   "properties": {
     "$schema": { "type": "string" },
     "meta": {
@@ -25,6 +25,11 @@
     "topics": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/taxonomyItem" }
+    },
+    "storylines": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/storyline" },
+      "minItems": 1
     },
     "periods": {
       "type": "array",
@@ -76,15 +81,59 @@
       ],
       "additionalProperties": true
     },
+    "storyNode": {
+      "type": "object",
+      "required": ["event", "label", "note"],
+      "properties": {
+        "event": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "label": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "storyPhase": {
+      "type": "object",
+      "required": ["label", "nodes"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/storyNode" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "storyline": {
+      "type": "object",
+      "required": ["id", "title", "summary", "conclusionTitle", "conclusion", "phases"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "conclusionTitle": { "type": "string", "minLength": 1 },
+        "conclusion": { "type": "string", "minLength": 1 },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/storyPhase" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "event": {
       "type": "object",
-      "required": ["id", "period", "date", "lane", "title", "short", "what", "why", "changed", "concepts", "orgs", "sources"],
+      "required": ["id", "period", "date", "lane", "topics", "title", "short", "what", "why", "changed", "concepts", "orgs", "sources"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "period": { "type": "string", "pattern": "^[0-9]{4}-H[12]$" },
         "date": { "type": "string", "format": "date" },
         "lane": { "type": "string", "enum": ["event", "tech"] },
-        "topic": { "type": "string" },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
         "title": { "type": "string", "minLength": 1 },
         "short": { "type": "string", "minLength": 1 },
         "what": { "type": "string", "minLength": 1 },

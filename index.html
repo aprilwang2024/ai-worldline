@@ -22,7 +22,7 @@
     <link rel="canonical" href="https://aprilwang2024.github.io/ai-worldline/" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
     <title>AI 世界线</title>
-    <link rel="stylesheet" href="./styles.css?v=1.0.0" />
+    <link rel="stylesheet" href="./styles.css?v=1.1.0-3" />
   </head>
   <body>
     <div class="paper-grain" aria-hidden="true"></div>
@@ -34,6 +34,9 @@
       <nav class="primary-nav" aria-label="主导航">
         <button class="nav-item is-active" type="button" data-route="timeline">
           <span>时间线</span>
+        </button>
+        <button class="nav-item" type="button" data-route="stories">
+          <span>故事线</span>
         </button>
         <button class="nav-item" type="button" data-route="sources">
           <span>文献库</span>
@@ -57,6 +60,7 @@
 
     <nav id="mobile-nav" class="mobile-nav" aria-label="移动端导航">
       <button type="button" data-route="timeline">时间线</button>
+      <button type="button" data-route="stories">故事线</button>
       <button type="button" data-route="sources">文献库</button>
       <button type="button" data-route="about">关于</button>
       <a href="https://github.com/aprilwang2024/ai-worldline" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -65,7 +69,7 @@
     <main id="app" tabindex="-1"></main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script src="./timeline-data.js?v=1.0.0"></script>
-    <script src="./app.js?v=1.0.0"></script>
+    <script src="./timeline-data.js?v=1.1.0-3"></script>
+    <script src="./app.js?v=1.1.0-3"></script>
   </body>
 </html>

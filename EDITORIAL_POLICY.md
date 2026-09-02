@@ -27,7 +27,9 @@ Every entry has one primary lane:
 - `event`: commercial, institutional, product, and adoption changes;
 - `tech`: research, architecture, infrastructure, protocol, and open-source breakthroughs.
 
-A topic such as `world-model` is a slice across both lanes. Topics do not become a third lane and do not imply a separate historical sequence.
+A topic such as `world-model`, `agentic-software`, or `moe` is a slice across both lanes. Entries may carry multiple topics. Topics do not become a third lane and do not imply a separate historical sequence.
+
+Storylines are curated causal readings of canonical events. They should reuse existing event IDs, divide the path into meaningful phases, and explain why one change made the next possible. They are not a second place to store events.
 
 ## Source hierarchy
 
