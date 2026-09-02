@@ -1,0 +1,17 @@
+{
+  "name": "ai-worldline",
+  "version": "1.0.0",
+  "description": "A source-first map of how modern AI changed.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:data": "node scripts/build-data.mjs",
+    "validate": "node scripts/validate-data.mjs",
+    "check": "node --check app.js && node --check timeline-data.js",
+    "test": "npm run validate && npm run build:data && npm run check"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

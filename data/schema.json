@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-worldline.dev/schema/timeline.schema.json",
+  "title": "AI Worldline timeline data",
+  "type": "object",
+  "required": ["meta", "lanes", "topics", "periods", "events"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "required": ["title", "version", "updatedAt", "currentPeriod", "scope"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "format": "date" },
+        "currentPeriod": { "type": "string", "pattern": "^[0-9]{4}-H[12]$" },
+        "scope": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "lanes": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/taxonomyItem" }
+    },
+    "topics": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/taxonomyItem" }
+    },
+    "periods": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/period" },
+      "minItems": 1
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "taxonomyItem": {
+      "type": "object",
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string" },
+        "color": { "type": "string" },
+        "soft": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "period": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9]{4}-H[12]$" },
+        "label": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["current", "watching", "complete"] }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "required": ["title", "publisher", "type"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "publisher": { "type": "string", "minLength": 1 },
+        "date": { "type": "string" },
+        "type": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "fullText": { "type": "string", "format": "uri" }
+      },
+      "anyOf": [
+        { "required": ["url"] },
+        { "required": ["fullText"] }
+      ],
+      "additionalProperties": true
+    },
+    "event": {
+      "type": "object",
+      "required": ["id", "period", "date", "lane", "title", "short", "what", "why", "changed", "concepts", "orgs", "sources"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "period": { "type": "string", "pattern": "^[0-9]{4}-H[12]$" },
+        "date": { "type": "string", "format": "date" },
+        "lane": { "type": "string", "enum": ["event", "tech"] },
+        "topic": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "short": { "type": "string", "minLength": 1 },
+        "what": { "type": "string", "minLength": 1 },
+        "why": { "type": "string", "minLength": 1 },
+        "changed": { "type": "string", "minLength": 1 },
+        "concepts": { "type": "array", "items": { "type": "string" } },
+        "orgs": { "type": "array", "items": { "type": "string" } },
+        "importance": { "type": "string", "enum": ["major", "normal"] },
+        "status": { "type": "string", "enum": ["watching", "complete"] },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

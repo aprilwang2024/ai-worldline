@@ -1,0 +1,65 @@
+name: Suggest an event
+description: Propose a sourced event or technical turning point for the timeline.
+title: "[Event]: "
+labels: ["content", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for improving AI Worldline. Please read the editorial policy and lead with primary evidence.
+  - type: input
+    id: title
+    attributes:
+      label: Event title
+      placeholder: A short, recognizable name
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      description: Use YYYY-MM-DD and explain uncertainty below if necessary.
+      placeholder: "2026-09-02"
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Primary lane
+      options:
+        - Event — company, institution, product, or adoption
+        - Technology — paper, architecture, protocol, or open source
+    validations:
+      required: true
+  - type: input
+    id: topic
+    attributes:
+      label: Cross-cutting topic
+      description: Optional. Use an existing topic such as world-model, or explain why a new topic is needed.
+  - type: textarea
+    id: case
+    attributes:
+      label: Why this is a turning point
+      description: Distinguish what happened, why it mattered, and what it changed.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Primary sources
+      description: Provide direct links to papers, full text, code, documentation, or official announcements.
+      placeholder: One source per line
+    validations:
+      required: true
+  - type: textarea
+    id: secondary
+    attributes:
+      label: Adoption or market evidence
+      description: Optional reporting or quantitative evidence for broader impact.
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure
+      options:
+        - label: I have disclosed any employment, investment, or authorship relationship relevant to this proposal.
+          required: true

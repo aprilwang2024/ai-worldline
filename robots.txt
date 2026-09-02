@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aprilwang2024.github.io/ai-worldline/sitemap.xml

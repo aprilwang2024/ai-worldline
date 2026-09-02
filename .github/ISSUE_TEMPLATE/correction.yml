@@ -1,0 +1,44 @@
+name: Correct an entry
+description: Report a factual error, broken source, missing attribution, or disputed interpretation.
+title: "[Correction]: "
+labels: ["correction", "needs-review"]
+body:
+  - type: input
+    id: entry
+    attributes:
+      label: Entry
+      description: Provide the event name or its permalink.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What needs correction?
+      options:
+        - Factual statement
+        - Date or classification
+        - Source or attribution
+        - Broken or unsafe link
+        - Editorial interpretation
+        - Translation or wording
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current text or behavior
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed correction
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Link to the strongest available source. Primary sources are preferred.
+    validations:
+      required: true
