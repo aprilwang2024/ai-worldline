@@ -35,7 +35,7 @@ body:
     id: topics
     attributes:
       label: Cross-cutting topics
-      description: Optional. List existing topics such as world-model, agentic-software, or moe; explain why a new topic is needed.
+      description: Optional. Use world-model when relevant. Explain the reader need before proposing any new public slice.
   - type: textarea
     id: case
     attributes:

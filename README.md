@@ -11,7 +11,7 @@ AI Worldline is an interactive, half-year-by-half-year map of the modern AI era.
 - **Events** — companies, institutions, launches, and moments that changed the market.
 - **Technology** — papers, architectures, research programs, and open-source breakthroughs that changed what was possible.
 
-Composable topics such as **world models**, **agentic software**, and **MoE** cut across both lanes. Three editorial storylines connect selected events into causal reading paths. Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, or official announcements.
+The public timeline has one deliberate cross-cutting slice: **world models / non-world-models**. Three editorial storylines connect selected events into causal reading paths. Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, or official announcements.
 
 ## Why this is different
 
@@ -21,7 +21,7 @@ Most AI timelines are either long lists or news archives. AI Worldline is design
 - primary papers, full text, code, and official releases come first;
 - interpretation is separated into “what happened / why it mattered / what changed”;
 - filters reveal a theme without turning it into a separate, misleading history;
-- one entry can belong to multiple cross-cutting topics;
+- the world-model slice can be viewed on its own without becoming a misleading third lane;
 - storylines reuse canonical events to explain phases and causal change;
 - unfinished periods can be marked as `watching` instead of being presented as settled fact.
 

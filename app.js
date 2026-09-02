@@ -35,17 +35,17 @@
   };
 
   const validLanes = new Set(["all", ...Object.keys(data.lanes)]);
-  const validTopics = new Set(["all", "not-world-model", ...Object.keys(data.topics)]);
+  const publicTopics = new Set(["all", "world-model", "not-world-model"]);
   const initialParams = new URLSearchParams(window.location.search);
   const requestedView = initialParams.get("view");
   const requestedTopic = initialParams.get("topic");
   const requestedEvent = data.events.find((event) => event.id === initialParams.get("event"));
   const requestedStory = data.storylines.find((storyline) => storyline.id === initialParams.get("story"));
   const initialLane = validLanes.has(requestedView) ? requestedView : "all";
-  const initialTopic = validTopics.has(requestedTopic)
+  const initialTopic = publicTopics.has(requestedTopic)
     ? requestedTopic
-    : Object.hasOwn(data.topics, requestedView)
-      ? requestedView
+    : requestedView === "world-model"
+      ? "world-model"
       : requestedView === "other" ? "not-world-model" : "all";
 
   const state = {
@@ -87,10 +87,10 @@
     const nextStory = data.storylines.find((storyline) => storyline.id === params.get("story"));
     state.route = getRoute();
     state.lane = validLanes.has(nextView) ? nextView : "all";
-    state.topic = validTopics.has(nextTopic)
+    state.topic = publicTopics.has(nextTopic)
       ? nextTopic
-      : Object.hasOwn(data.topics, nextView)
-        ? nextView
+      : nextView === "world-model"
+        ? "world-model"
         : nextView === "other" ? "not-world-model" : "all";
     state.query = params.get("q") || "";
     if (nextEvent) state.selectedId = nextEvent.id;
@@ -158,7 +158,7 @@
   }
 
   function topicLabels(event) {
-    return (event.topics || []).map((topicId) => data.topics[topicId]?.label).filter(Boolean);
+    return [eventHasTopic(event, "world-model") ? "世界模型" : "非世界模型"];
   }
 
   function eventMatches(event, query = state.query) {
@@ -214,8 +214,10 @@
       <section class="timeline-screen" aria-label="AI 世界线主时间轴">
         <div class="timeline-main">
           <div class="toolbar">
-            <div class="view-switch" role="group" aria-label="选择时间线视角">
-              ${renderLaneButton("all", "全部")}${renderLaneButton("event", "事件")}${renderLaneButton("tech", "技术")}<span class="view-divider" role="separator" aria-hidden="true"></span>${Object.entries(data.topics).map(([topicId, topic]) => renderTopicButton(topicId, topic.label)).join("")}${renderTopicButton("not-world-model", "非世界模型")}
+            <div class="view-switch" aria-label="筛选时间线">
+              <div class="filter-group" role="group" aria-label="选择主轴"><span class="filter-label">主轴</span>${renderLaneButton("all", "事件＋技术")}${renderLaneButton("event", "事件")}${renderLaneButton("tech", "技术")}</div>
+              <span class="view-divider" role="separator" aria-hidden="true"></span>
+              <div class="filter-group" role="group" aria-label="选择专题切面"><span class="filter-label">切面</span>${renderTopicButton("all", "混合显示")}${renderTopicButton("world-model", "世界模型")}${renderTopicButton("not-world-model", "非世界模型")}</div>
             </div>
             <label class="search-box">${icons.search}<input id="timeline-search" type="search" value="${escapeAttr(state.query)}" placeholder="搜索事件、技术或机构" autocomplete="off" /></label>
           </div>
@@ -237,7 +239,8 @@
 
   function renderTopicButton(key, label) {
     const active = state.topic === key;
-    return `<button class="view-button ${active ? "is-active" : ""}" type="button" data-topic="${key}" aria-pressed="${active}" title="${active ? "再次点击取消此切面" : `只看${escapeAttr(label)}`}">${escapeHTML(label)}</button>`;
+    const title = key === "all" ? "同时显示世界模型与非世界模型" : active ? "再次点击返回混合显示" : `只看${escapeAttr(label)}`;
+    return `<button class="view-button ${active ? "is-active" : ""}" type="button" data-topic="${key}" aria-pressed="${active}" title="${title}">${escapeHTML(label)}</button>`;
   }
 
   function renderDesktopBoard() {
@@ -311,7 +314,7 @@
 
   function bindTimelineEvents() {
     document.querySelectorAll("[data-lane]").forEach((button) => button.addEventListener("click", () => { state.lane = button.dataset.lane; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
-    document.querySelectorAll("[data-topic]").forEach((button) => button.addEventListener("click", () => { state.topic = state.topic === button.dataset.topic ? "all" : button.dataset.topic; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
+    document.querySelectorAll("[data-topic]").forEach((button) => button.addEventListener("click", () => { state.topic = button.dataset.topic === "all" || state.topic === button.dataset.topic ? "all" : button.dataset.topic; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
     document.querySelector("#timeline-search")?.addEventListener("input", (event) => { state.query = event.target.value; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ open: false }); renderTimeline(); const search = document.querySelector("#timeline-search"); search?.focus(); search?.setSelectionRange(state.query.length, state.query.length); });
     document.querySelectorAll("[data-event-id]").forEach((button) => button.addEventListener("click", () => { state.selectedId = button.dataset.eventId; state.drawerOpen = window.innerWidth <= 1050; state.timelineHasPosition = true; writeLocationState({ historyMode: "push" }); renderTimeline(); }));
     bindSharedActions();
@@ -449,7 +452,7 @@
   }
 
   function renderAbout() {
-    app.innerHTML = `<section class="about-screen"><header class="page-head"><h1>关于这条线</h1><p>v${escapeHTML(data.meta.version)} · 更新于 ${escapeHTML(data.meta.updatedAt)}。这是一份持续编辑的研究索引，不是宣称完整的 AI 历史。</p></header><div class="about-grid"><div class="about-lead">事件记录产业如何转向。<br>技术记录能力为什么跃迁。</div><div class="about-content"><section><h2>两条主轴</h2><p><strong>事件</strong>收录商业、公司、机构和现象级产品转折；<strong>技术</strong>收录论文、架构、协议、实验室与开源社区的突破。原来的理念并入技术，机构并入事件。</p></section><section><h2>可叠加切面</h2><p>世界模型、Agent 软件与 MoE 都是横跨两条主轴的专题标签。同一个条目可以同时属于多个切面；筛选只是重新观察同一段历史，不会制造互相隔离的第三条轴。</p></section><section><h2>故事线</h2><p>故事线从已有事件中选出关键节点，补上阶段与因果关系。它不增加新闻数量，而是解释能力、产品和基础设施为什么沿着某条路径发生变化。</p></section><section><h2>怎样更新</h2><p>在 <code>data/timeline.json</code> 中追加半年和条目，运行数据生成与校验，再提交变更。每条记录写清“发生了什么 / 为什么重要 / 改变了什么”，并至少附一份论文全文或官方来源。</p></section><section><h2>开放共建</h2><p>项目在 <a href="https://github.com/aprilwang2024/ai-worldline" target="_blank" rel="noopener noreferrer">GitHub</a> 上开放代码、数据与编辑规则。可以提交新事件、补充原始来源或发起事实纠错。</p></section></div></div></section>`;
+    app.innerHTML = `<section class="about-screen"><header class="page-head"><h1>关于这条线</h1><p>v${escapeHTML(data.meta.version)} · 更新于 ${escapeHTML(data.meta.updatedAt)}。这是一份持续编辑的研究索引，不是宣称完整的 AI 历史。</p></header><div class="about-grid"><div class="about-lead">事件记录产业如何转向。<br>技术记录能力为什么跃迁。</div><div class="about-content"><section><h2>两条主轴</h2><p><strong>事件</strong>收录商业、公司、机构和现象级产品转折；<strong>技术</strong>收录论文、架构、协议、实验室与开源社区的突破。原来的理念并入技术，机构并入事件。</p></section><section><h2>一个切面</h2><p><strong>世界模型 / 非世界模型</strong>是横跨两条主轴的专题切面。默认混合显示完整历史，也可以单独观察其中一侧；它不会被误画成互相隔离的第三条轴。</p></section><section><h2>故事线</h2><p>故事线从已有事件中选出关键节点，补上阶段与因果关系。它不增加新闻数量，而是解释能力、产品和基础设施为什么沿着某条路径发生变化。</p></section><section><h2>怎样更新</h2><p>在 <code>data/timeline.json</code> 中追加半年和条目，运行数据生成与校验，再提交变更。每条记录写清“发生了什么 / 为什么重要 / 改变了什么”，并至少附一份论文全文或官方来源。</p></section><section><h2>开放共建</h2><p>项目在 <a href="https://github.com/aprilwang2024/ai-worldline" target="_blank" rel="noopener noreferrer">GitHub</a> 上开放代码、数据与编辑规则。可以提交新事件、补充原始来源或发起事实纠错。</p></section></div></div></section>`;
   }
 
   document.querySelectorAll("[data-route]").forEach((button) => button.addEventListener("click", () => {

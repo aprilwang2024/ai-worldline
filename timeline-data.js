@@ -7,7 +7,7 @@ window.AI_WORLDLINE_DATA = {
   "$schema": "./schema.json",
   "meta": {
     "title": "AI 世界线",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "updatedAt": "2026-09-02",
     "currentPeriod": "2026-H2",
     "scope": "A curated, source-first timeline of the modern foundation-model, agent, and world-model era."

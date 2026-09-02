@@ -161,6 +161,7 @@ svg {
   grid-template-rows: 78px minmax(0, 1fr) 48px;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .toolbar {
@@ -173,7 +174,18 @@ svg {
   background: var(--white);
 }
 
-.view-switch { display: flex; align-items: stretch; align-self: stretch; gap: 23px; }
+.view-switch { display: flex; min-width: 0; align-items: stretch; align-self: stretch; gap: 17px; }
+
+.filter-group { display: flex; min-width: max-content; align-items: stretch; gap: 17px; }
+
+.filter-label {
+  align-self: center;
+  color: #9aa3b1;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
 
 .view-divider {
   align-self: center;
@@ -197,8 +209,6 @@ svg {
 .view-button:hover, .view-button.is-active { color: var(--ink); }
 .view-button[data-topic="world-model"].is-active { color: var(--teal); }
 .view-button[data-topic="world-model"].is-active::after { background: var(--teal); }
-.view-button[data-topic="moe"].is-active { color: #6657c8; }
-.view-button[data-topic="moe"].is-active::after { background: #6657c8; }
 
 .search-box {
   display: flex;
@@ -473,6 +483,8 @@ svg {
 
 /* Source pane */
 .source-panel {
+  position: relative;
+  z-index: 30;
   min-width: 0;
   min-height: 0;
   overflow: hidden auto;
@@ -1000,7 +1012,7 @@ svg {
   .site-header { padding: 0 25px; }
   .brand-sub { display: none; }
   .toolbar { gap: 20px; padding-right: 20px; padding-left: 24px; }
-  .view-switch { gap: 15px; }
+  .view-switch, .filter-group { gap: 13px; }
   .view-button { font-size: 11px; }
   .source-panel-inner { padding-right: 23px; padding-left: 23px; }
 }
@@ -1015,7 +1027,7 @@ svg {
   :root { --source-w: 292px; --label-w: 184px; --period-w: 208px; }
   .primary-nav { gap: 19px; }
   .timeline-main { grid-template-rows: 72px minmax(0, 1fr) 45px; }
-  .view-switch { gap: 14px; }
+  .view-switch, .filter-group { gap: 12px; }
   .search-box { width: min(32vw, 360px); }
   .source-panel-inner { padding: 26px 18px 30px; }
   .selection-heading { font-size: 29px; }
@@ -1086,10 +1098,12 @@ svg {
   .view-switch {
     width: 100%;
     height: 53px;
-    gap: 17px;
+    gap: 16px;
     overflow-x: auto;
     scrollbar-width: none;
   }
+
+  .filter-group { gap: 16px; }
 
   .view-switch::-webkit-scrollbar { display: none; }
   .view-button { flex: 0 0 auto; font-size: 11px; }

@@ -27,7 +27,7 @@ Every entry has one primary lane:
 - `event`: commercial, institutional, product, and adoption changes;
 - `tech`: research, architecture, infrastructure, protocol, and open-source breakthroughs.
 
-A topic such as `world-model`, `agentic-software`, or `moe` is a slice across both lanes. Entries may carry multiple topics. Topics do not become a third lane and do not imply a separate historical sequence.
+The public timeline currently exposes one slice across both lanes: `world-model` versus everything outside it. The canonical dataset can retain additional editorial tags for future research, but those tags should not become public filters without a clear reader need. A topic never becomes a third lane or implies a separate historical sequence.
 
 Storylines are curated causal readings of canonical events. They should reuse existing event IDs, divide the path into meaningful phases, and explain why one change made the next possible. They are not a second place to store events.
 

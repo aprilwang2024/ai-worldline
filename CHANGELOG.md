@@ -2,6 +2,13 @@
 
 All material additions and corrections to AI Worldline are recorded here.
 
+## 1.1.1 — 2026-09-02
+
+- separated the timeline controls into a primary-lane group and a topic-slice group;
+- renamed the ambiguous “all” states to “event + technology” and “mixed view”;
+- simplified the public topic choices to world models and non-world-models;
+- fixed timeline content painting over the source panel at compact desktop widths.
+
 ## 1.1.0 — 2026-09-02
 
 - added three curated storylines that connect existing events into causal reading paths;
