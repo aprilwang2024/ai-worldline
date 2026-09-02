@@ -2,9 +2,9 @@
 
 **一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。**
 
-[English](./README.md) · [在线阅读](https://aprilwang2024.github.io/ai-worldline/) · [阅读故事线](https://aprilwang2024.github.io/ai-worldline/#stories) · [查看数据](./data/timeline.json) · [建议新条目](../../issues/new?template=add-event.yml)
+[中英双语概览](./README.md) · [English](./README.en.md) · [在线阅读](https://aprilwang2024.github.io/ai-worldline/) · [阅读故事线](https://aprilwang2024.github.io/ai-worldline/#stories) · [查看数据](./data/timeline.json) · [建议新条目](../../issues/new?template=add-event.yml)
 
-![AI 世界线](./assets/product-preview.png)
+![AI 世界线动态演示](./assets/ai-worldline-demo.gif)
 
 AI 世界线按半年整理现代 AI 的演进，并把经常混在一起的两类问题分开：
 

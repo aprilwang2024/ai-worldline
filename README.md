@@ -1,47 +1,46 @@
-# AI Worldline
+<div align="center">
+  <h1>AI 世界线 · AI Worldline</h1>
+  <p>
+    <strong>每半年，记录产业如何转向，技术如何跃迁。</strong><br />
+    A source-first map of how modern AI changed.
+  </p>
+  <p>
+    <a href="https://aprilwang2024.github.io/ai-worldline/"><strong>在线体验 · Live site</strong></a>
+    · <a href="./README.zh-CN.md">中文完整版</a>
+    · <a href="./README.en.md">English README</a>
+    · <a href="../../issues/new?template=add-event.yml">贡献事件 · Suggest an entry</a>
+  </p>
+</div>
 
-**A source-first map of how modern AI changed.**
+![AI 世界线动态演示 / AI Worldline demo](./assets/ai-worldline-demo.gif)
 
-[中文](./README.zh-CN.md) · [Live site](https://aprilwang2024.github.io/ai-worldline/) · [Read the storylines](https://aprilwang2024.github.io/ai-worldline/#stories) · [Browse the data](./data/timeline.json) · [Suggest an entry](../../issues/new?template=add-event.yml)
+<p align="center"><sub>完整时间线 · 世界模型切面 · 故事线 · 文献库</sub></p>
 
-![AI Worldline timeline](./assets/product-preview.png)
+## 中文
 
-AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates two questions that are often mixed together:
+AI 世界线是一张按半年整理的现代 AI 演进地图。它把经常混在一起的两类变化分开，并让每个判断回到论文、代码或机构官方发布：
 
-- **Events** — companies, institutions, launches, and moments that changed the market.
-- **Technology** — papers, architectures, research programs, and open-source breakthroughs that changed what was possible.
+- **事件**：公司、机构、产品发布与改变市场方向的时刻；
+- **技术**：论文、架构、研究路线与开源社区带来的能力跃迁；
+- **世界模型切面**：在完整历史、世界模型和非世界模型之间切换；
+- **故事线**：把关键节点连接成可阅读的阶段与因果路径；
+- **文献库**：集中浏览所有条目的原始来源和全文链接。
 
-The public timeline has one deliberate cross-cutting slice: **world models / non-world-models**. Three editorial storylines connect selected events into causal reading paths. Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, or official announcements.
+当前档案覆盖 **2017—2026**，包含 **93 个条目**、**132 份去重来源**和 **3 条故事线**。世界模型切面有 **34 个条目**，覆盖模型式强化学习、预测表征、可交互生成、具身智能、自动驾驶与空间智能。
 
-## Why this is different
+[阅读中文完整介绍、编辑原则与贡献方法 →](./README.zh-CN.md)
 
-Most AI timelines are either long lists or news archives. AI Worldline is designed as a research index:
+## English
 
-- every entry has at least one attributable source;
-- primary papers, full text, code, and official releases come first;
-- interpretation is separated into “what happened / why it mattered / what changed”;
-- filters reveal a theme without turning it into a separate, misleading history;
-- the world-model slice can be viewed on its own without becoming a misleading third lane;
-- storylines reuse canonical events to explain phases and causal change;
-- unfinished periods can be marked as `watching` instead of being presented as settled fact.
+AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates market-moving **events** from capability-changing **technology**, then connects them through a focused world-model slice, curated storylines, and a source library.
 
-The current archive covers **2017–2026**, with **93 entries**, **132 unique sources**, and **3 curated storylines**. The world-model slice contains **34 entries** across model-based reinforcement learning, predictive representation, interactive generation, embodied AI, autonomous driving, and spatial intelligence.
+Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, technical reports, or official announcements. The current archive covers **2017–2026**, with **93 entries**, **132 unique sources**, and **3 curated storylines**.
 
-## Use it
+[Read the full English introduction, editorial policy, and contribution guide →](./README.en.md)
 
-The published site is static and has no runtime dependencies. To run it locally:
+## 参与共建 · Contributing
 
-```bash
-python3 -m http.server 8808
-```
-
-Then open `http://127.0.0.1:8808/`.
-
-You can also open `index.html` directly. Node.js is only required when changing the canonical dataset.
-
-## Contribute an event
-
-The canonical archive lives in [`data/timeline.json`](./data/timeline.json), not in the generated JavaScript bundle.
+权威数据源是 [`data/timeline.json`](./data/timeline.json)。每个 Pull Request 都会检查重复 ID、错误分类、日期、解释字段、链接和来源。The canonical archive lives in [`data/timeline.json`](./data/timeline.json), and every pull request is validated automatically.
 
 ```bash
 npm run validate
@@ -49,26 +48,4 @@ npm run build:data
 npm test
 ```
 
-Each pull request is checked for duplicate IDs, unknown periods and taxonomies, invalid dates, missing explanations, malformed URLs, and entries without sources. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the editorial and technical workflow.
-
-If you do not want to edit JSON, use the structured [event suggestion form](../../issues/new?template=add-event.yml) or [correction form](../../issues/new?template=correction.yml).
-
-## Project structure
-
-```text
-data/timeline.json       canonical timeline, topic, and storyline data
-data/schema.json         JSON Schema for editors
-scripts/                 validation and data generation
-timeline-data.js         generated browser-compatible bundle
-app.js                   filters, storylines, search, permalinks, and details
-styles.css               visual system and responsive layout
-.github/                 CI, Pages deployment, and contribution forms
-```
-
-## Editorial policy
-
-This is a curated map, not a claim to contain all of AI history. Inclusion rules, source hierarchy, correction policy, and the distinction between facts and interpretation are documented in [`EDITORIAL_POLICY.md`](./EDITORIAL_POLICY.md). The detailed world-model research ledger is available in [`report-source.md`](./report-source.md).
-
-## License
-
-Code is available under the [MIT License](./LICENSE). Timeline data, summaries, and editorial content are available under [CC BY 4.0](./LICENSE-CONTENT.md). Source publications remain the property of their respective authors and publishers.
+项目采用 [MIT License](./LICENSE)；时间线数据与编辑内容采用 [CC BY 4.0](./LICENSE-CONTENT.md)。Code is MIT licensed; timeline data and editorial content are available under CC BY 4.0.
