@@ -52,4 +52,8 @@ Choose **Suggest an event** if you have the evidence but do not want to edit the
 
 Maintainers may accept the evidence but revise wording, move the entry between periods or lanes, or decline an item that duplicates an existing turning point. Disagreement is welcome when it is attached to evidence.
 
+## Maintainer release check
+
+When a release visibly changes the logo, navigation, filters, detail panel, or source library, regenerate `assets/ai-worldline-demo.gif` from the current interface before publishing. Check that the first frame shows the current brand, the loop returns cleanly, the key product views are legible, and the file remains reasonably small for GitHub README loading.
+
 By contributing code, you agree to license it under MIT. By contributing data or editorial content, you agree to license it under CC BY 4.0.
