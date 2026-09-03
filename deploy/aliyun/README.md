@@ -15,6 +15,7 @@ Server paths:
 - live symlink: `/var/www/aiworldline.aprilworks.cn/current`
 - systemd units: `ai-worldline-update.service` and `.timer`
 - Nginx host: `/etc/nginx/conf.d/aiworldline.aprilworks.cn.conf`
+- Certbot deploy hook: `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx`
 
 After changing one of these files, copy it to the matching server path and run:
 
@@ -25,5 +26,7 @@ nginx -t
 systemctl reload nginx
 ```
 
-TLS is provisioned separately for `aiworldline.aprilworks.cn`; the existing
-`aprilworks.cn` certificate does not include this subdomain.
+TLS is provisioned separately with Certbot for `aiworldline.aprilworks.cn`; the
+existing `aprilworks.cn` certificate does not include this subdomain. The HTTP
+virtual host keeps the ACME challenge path available and redirects other traffic
+to HTTPS.
