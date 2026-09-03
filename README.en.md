@@ -1,12 +1,12 @@
 # AI Worldline
 
-**A source-first map of how modern AI changed.**
+**A source-first timeline of foundation models, agents, and world models.**
 
 [Bilingual overview](./README.md) · [简体中文](./README.zh-CN.md) · [Live site](https://aprilwang2024.github.io/ai-worldline/) · [Browse the data](./data/timeline.json) · [Suggest an entry](../../issues/new?template=add-event.yml)
 
 ![AI Worldline demo](./assets/ai-worldline-demo.gif)
 
-AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates two questions that are often mixed together:
+AI Worldline is an interactive, half-year-by-half-year map of the foundation-model era. It separates two questions that are often mixed together:
 
 - **Events** — companies, institutions, launches, and moments that changed the market.
 - **Technology** — papers, architectures, research programs, and open-source breakthroughs that changed what was possible.

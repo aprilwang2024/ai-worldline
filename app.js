@@ -136,7 +136,7 @@
     document.title = hasExplicitEvent ? `${event.title} · AI 世界线` : routeTitles[state.route] || "AI 世界线";
     const description = hasExplicitEvent
       ? event.what
-      : "AI 世界线：一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。";
+      : "AI 世界线：追踪基础模型、智能体与世界模型的关键演进，每个节点回到原始来源。";
     document.querySelector('meta[name="description"]')?.setAttribute("content", description);
   }
 

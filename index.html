@@ -5,31 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="AI 世界线：一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。"
+      content="AI 世界线：追踪基础模型、智能体与世界模型的关键演进，每个节点回到原始来源。"
     />
     <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="zh_CN" />
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:title" content="AI 世界线 · AI Worldline" />
-    <meta property="og:description" content="事件记录产业如何转向，技术记录能力为什么跃迁。每个节点回到论文、代码或官方发布。" />
+    <meta property="og:description" content="基础模型、智能体与世界模型的演进图谱。每个节点回到论文、代码或官方发布。" />
     <meta property="og:url" content="https://aprilwang2024.github.io/ai-worldline/" />
     <meta property="og:image" content="https://aprilwang2024.github.io/ai-worldline/assets/social-preview.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="AI 世界线 · AI Worldline" />
-    <meta name="twitter:description" content="A source-first map of how modern AI changed." />
+    <meta name="twitter:description" content="A source-first timeline of foundation models, agents, and world models." />
     <meta name="twitter:image" content="https://aprilwang2024.github.io/ai-worldline/assets/social-preview.png" />
     <link rel="canonical" href="https://aprilwang2024.github.io/ai-worldline/" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
     <title>AI 世界线</title>
-    <link rel="stylesheet" href="./styles.css?v=1.2.0" />
+    <link rel="stylesheet" href="./styles.css?v=1.2.1" />
   </head>
   <body>
     <div class="paper-grain" aria-hidden="true"></div>
     <header class="site-header">
       <a class="brand" href="#timeline" aria-label="AI 世界线首页">
-        <span class="brand-main"><span class="brand-latin">AI</span> 世界线</span>
-        <span class="brand-sub">每半年，记录产业如何转向，技术如何跃迁。</span>
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-mark-ai">AI<span class="brand-mark-slash"></span></span>
+          <span class="brand-mark-name">
+            <span class="brand-mark-char is-world">世</span>
+            <span class="brand-mark-char is-boundary">界</span>
+            <span class="brand-mark-char is-line">线</span>
+          </span>
+        </span>
+        <span class="brand-sub">基础模型 · 智能体 · 世界模型</span>
       </a>
       <nav class="primary-nav" aria-label="主导航">
         <button class="nav-item is-active" type="button" data-route="timeline">
@@ -65,7 +72,7 @@
     <main id="app" tabindex="-1"></main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script src="./timeline-data.js?v=1.2.0"></script>
-    <script src="./app.js?v=1.2.0"></script>
+    <script src="./timeline-data.js?v=1.2.1"></script>
+    <script src="./app.js?v=1.2.1"></script>
   </body>
 </html>

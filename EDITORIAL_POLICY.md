@@ -1,6 +1,6 @@
 # Editorial policy
 
-AI Worldline is a curated research index. It aims to explain the sequence of meaningful changes in modern AI without pretending that selection or interpretation is neutral.
+AI Worldline is a curated research index. It tracks meaningful changes across foundation models, agents, and world models without pretending that selection or interpretation is neutral.
 
 ## What belongs
 

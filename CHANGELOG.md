@@ -2,6 +2,11 @@
 
 All material additions and corrections to AI Worldline are recorded here.
 
+## 1.2.1 — 2026-09-03
+
+- narrowed the project description to foundation models, agents, and world models;
+- made the source panel and timeline toolbar responsive across common desktop zoom levels.
+
 ## 1.2.0 — 2026-09-03
 
 - added a lightweight animated README demo covering the timeline, world-model slice, event details, and source library;

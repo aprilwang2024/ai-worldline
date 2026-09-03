@@ -1,12 +1,12 @@
 # AI 世界线
 
-**一张解释现代 AI 为什么会走到今天的、以原始来源为基础的地图。**
+**基础模型、智能体与世界模型的演进图谱。**
 
 [中英双语概览](./README.md) · [English](./README.en.md) · [在线阅读](https://aprilwang2024.github.io/ai-worldline/) · [查看数据](./data/timeline.json) · [建议新条目](../../issues/new?template=add-event.yml)
 
 ![AI 世界线动态演示](./assets/ai-worldline-demo.gif)
 
-AI 世界线按半年整理现代 AI 的演进，并把经常混在一起的两类问题分开：
+AI 世界线按半年整理基础模型时代的演进，并把经常混在一起的两类问题分开：
 
 - **事件**：公司、机构、产品发布与改变市场方向的时刻；
 - **技术**：论文、架构、研究路线与开源社区带来的能力跃迁。

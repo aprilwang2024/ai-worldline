@@ -1,8 +1,8 @@
 <div align="center">
   <h1>AI 世界线 · AI Worldline</h1>
   <p>
-    <strong>每半年，记录产业如何转向，技术如何跃迁。</strong><br />
-    A source-first map of how modern AI changed.
+    <strong>基础模型 · 智能体 · 世界模型</strong><br />
+    A source-first timeline of foundation models, agents, and world models.
   </p>
   <p>
     <a href="https://aprilwang2024.github.io/ai-worldline/"><strong>在线体验 · Live site</strong></a>
@@ -18,7 +18,7 @@
 
 ## 中文
 
-AI 世界线是一张按半年整理的现代 AI 演进地图。它把经常混在一起的两类变化分开，并让每个判断回到论文、代码或机构官方发布：
+AI 世界线是一张按半年整理的基础模型时代演进图谱。它把经常混在一起的两类变化分开，并让每个判断回到论文、代码或机构官方发布：
 
 - **事件**：公司、机构、产品发布与改变市场方向的时刻；
 - **技术**：论文、架构、研究路线与开源社区带来的能力跃迁；
@@ -31,7 +31,7 @@ AI 世界线是一张按半年整理的现代 AI 演进地图。它把经常混�
 
 ## English
 
-AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates market-moving **events** from capability-changing **technology**, with a focused world-model slice and a source library.
+AI Worldline is an interactive, half-year-by-half-year map of foundation models, agents, and world models. It separates market-moving **events** from capability-changing **technology**, with a focused world-model slice and a source library.
 
 Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, technical reports, or official announcements. The current archive covers **2017–2026**, with **93 entries** and **132 unique sources**.
 
