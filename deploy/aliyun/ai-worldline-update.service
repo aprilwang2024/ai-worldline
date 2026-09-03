@@ -1,0 +1,16 @@
+[Unit]
+Description=Update the AI Worldline mainland mirror
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=aiworldline
+Group=aiworldline
+ExecStart=/usr/local/sbin/update-ai-worldline
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/aiworldline.aprilworks.cn
+

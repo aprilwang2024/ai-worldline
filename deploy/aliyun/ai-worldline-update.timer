@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for AI Worldline updates every ten minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+RandomizedDelaySec=45s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+

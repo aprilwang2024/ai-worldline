@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly REPOSITORY="aprilwang2024/ai-worldline"
+readonly BRANCH="main"
+readonly SITE_ROOT="/var/www/aiworldline.aprilworks.cn"
+readonly RELEASES_ROOT="${SITE_ROOT}/releases"
+readonly CURRENT_LINK="${SITE_ROOT}/current"
+readonly API_URL="https://api.github.com/repos/${REPOSITORY}/commits/${BRANCH}"
+
+log() {
+  printf '[ai-worldline] %s\n' "$*"
+}
+
+mkdir -p "${RELEASES_ROOT}"
+
+sha="$({
+  curl \
+    --fail \
+    --silent \
+    --show-error \
+    --location \
+    --connect-timeout 10 \
+    --max-time 30 \
+    --header 'Accept: application/vnd.github+json' \
+    "${API_URL}"
+} | node -e '
+let body = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => body += chunk);
+process.stdin.on("end", () => {
+  const value = JSON.parse(body).sha;
+  if (!/^[0-9a-f]{40}$/.test(value || "")) process.exit(2);
+  process.stdout.write(value);
+});
+')"
+
+if [[ -L "${CURRENT_LINK}" ]]; then
+  current_sha="$(basename "$(readlink -f "${CURRENT_LINK}")")"
+  if [[ "${current_sha}" == "${sha}" ]]; then
+    log "already current at ${sha}"
+    exit 0
+  fi
+fi
+
+readonly RELEASE_DIR="${RELEASES_ROOT}/${sha}"
+if [[ ! -d "${RELEASE_DIR}" ]]; then
+  archive="$(mktemp)"
+  stage="$(mktemp -d "${RELEASES_ROOT}/.staging-XXXXXX")"
+  cleanup() {
+    rm -f -- "${archive}"
+    rm -rf -- "${stage}"
+  }
+  trap cleanup EXIT
+
+  log "downloading ${sha}"
+  curl \
+    --fail \
+    --silent \
+    --show-error \
+    --location \
+    --retry 2 \
+    --connect-timeout 10 \
+    --max-time 120 \
+    "https://codeload.github.com/${REPOSITORY}/tar.gz/${sha}" \
+    --output "${archive}"
+  tar -xzf "${archive}" -C "${stage}" --strip-components=1
+
+  test -s "${stage}/index.html"
+  test -s "${stage}/app.js"
+  test -s "${stage}/timeline-data.js"
+  (
+    cd "${stage}"
+    node scripts/validate-data.mjs
+    node --check app.js
+    node --check timeline-data.js
+  )
+
+  # mktemp creates the staging directory as 0700. Make the validated release
+  # readable by Nginx before publishing the symlink.
+  chmod -R u=rwX,go=rX "${stage}"
+
+  mv "${stage}" "${RELEASE_DIR}"
+  trap - EXIT
+  rm -f -- "${archive}"
+fi
+
+next_link="${SITE_ROOT}/.current-next"
+ln -sfn "${RELEASE_DIR}" "${next_link}"
+mv -Tf "${next_link}" "${CURRENT_LINK}"
+log "published ${sha}"
