@@ -2,11 +2,12 @@
 
 All material additions and corrections to AI Worldline are recorded here.
 
-## Unreleased
+## 1.2.0 — 2026-09-03
 
-- added a lightweight animated README demo covering the timeline, world-model slice, storylines, and source library;
+- added a lightweight animated README demo covering the timeline, world-model slice, event details, and source library;
 - replaced the English-only default README with a bilingual project overview and dedicated Chinese and English guides;
 - made the language switch and live site prominent at the top of every README.
+- removed the storyline feature, its interpretive data, UI, routes, styles, and validation rules to keep the project source-first and maintainable;
 
 ## 1.1.1 — 2026-09-02
 

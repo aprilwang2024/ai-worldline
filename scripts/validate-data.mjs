@@ -97,39 +97,6 @@ export function validateTimeline(data) {
     });
   });
 
-  const storylines = Array.isArray(data.storylines) ? data.storylines : [];
-  if (!storylines.length) errors.push("storylines must contain at least one storyline");
-  const storylineIds = new Set();
-  storylines.forEach((storyline, index) => {
-    const path = `storylines[${index}]`;
-    ["id", "title", "summary", "conclusionTitle", "conclusion"].forEach((key) => {
-      requireText(storyline?.[key], `${path}.${key}`, errors);
-    });
-    if (storylineIds.has(storyline?.id)) errors.push(`${path}.id duplicates ${storyline.id}`);
-    storylineIds.add(storyline?.id);
-    if (storyline?.id && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storyline.id)) errors.push(`${path}.id must be kebab-case`);
-    if (!Array.isArray(storyline?.phases) || !storyline.phases.length) {
-      errors.push(`${path}.phases must contain at least one phase`);
-      return;
-    }
-    const referencedEvents = new Set();
-    storyline.phases.forEach((phase, phaseIndex) => {
-      const phasePath = `${path}.phases[${phaseIndex}]`;
-      requireText(phase?.label, `${phasePath}.label`, errors);
-      if (!Array.isArray(phase?.nodes) || !phase.nodes.length) {
-        errors.push(`${phasePath}.nodes must contain at least one node`);
-        return;
-      }
-      phase.nodes.forEach((node, nodeIndex) => {
-        const nodePath = `${phasePath}.nodes[${nodeIndex}]`;
-        ["event", "label", "note"].forEach((key) => requireText(node?.[key], `${nodePath}.${key}`, errors));
-        if (node?.event && !eventIds.has(node.event)) errors.push(`${nodePath}.event references unknown event ${node.event}`);
-        if (referencedEvents.has(node?.event)) errors.push(`${nodePath}.event duplicates ${node.event} within the storyline`);
-        referencedEvents.add(node?.event);
-      });
-    });
-  });
-
   return errors;
 }
 
@@ -149,7 +116,7 @@ async function main() {
 
   const sourceUrls = new Set(data.events.flatMap((event) => event.sources.map((source) => source.url || source.fullText)));
   const worldModels = data.events.filter((event) => event.topics.includes("world-model"));
-  console.log(`Validated ${data.events.length} events, ${sourceUrls.size} sources, ${worldModels.length} world-model entries, and ${data.storylines.length} storylines.`);
+  console.log(`Validated ${data.events.length} events, ${sourceUrls.size} sources, and ${worldModels.length} world-model entries.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

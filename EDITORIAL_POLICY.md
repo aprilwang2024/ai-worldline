@@ -29,8 +29,6 @@ Every entry has one primary lane:
 
 The public timeline currently exposes one slice across both lanes: `world-model` versus everything outside it. The canonical dataset can retain additional editorial tags for future research, but those tags should not become public filters without a clear reader need. A topic never becomes a third lane or implies a separate historical sequence.
 
-Storylines are curated causal readings of canonical events. They should reuse existing event IDs, divide the path into meaningful phases, and explain why one change made the next possible. They are not a second place to store events.
-
 ## Source hierarchy
 
 Primary sources come first: papers, technical reports, official documentation, release notes, repositories, and direct talks. Reliable reporting is appropriate for adoption, financing, internal organization, and other facts that first-party sources cannot independently establish.

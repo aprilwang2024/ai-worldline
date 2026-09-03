@@ -14,7 +14,7 @@
 
 ![AI 世界线动态演示 / AI Worldline demo](./assets/ai-worldline-demo.gif)
 
-<p align="center"><sub>完整时间线 · 世界模型切面 · 故事线 · 文献库</sub></p>
+<p align="center"><sub>完整时间线 · 世界模型切面 · 条目详情 · 文献库</sub></p>
 
 ## 中文
 
@@ -23,18 +23,17 @@ AI 世界线是一张按半年整理的现代 AI 演进地图。它把经常混�
 - **事件**：公司、机构、产品发布与改变市场方向的时刻；
 - **技术**：论文、架构、研究路线与开源社区带来的能力跃迁；
 - **世界模型切面**：在完整历史、世界模型和非世界模型之间切换；
-- **故事线**：把关键节点连接成可阅读的阶段与因果路径；
 - **文献库**：集中浏览所有条目的原始来源和全文链接。
 
-当前档案覆盖 **2017—2026**，包含 **93 个条目**、**132 份去重来源**和 **3 条故事线**。世界模型切面有 **34 个条目**，覆盖模型式强化学习、预测表征、可交互生成、具身智能、自动驾驶与空间智能。
+当前档案覆盖 **2017—2026**，包含 **93 个条目**和 **132 份去重来源**。世界模型切面有 **34 个条目**，覆盖模型式强化学习、预测表征、可交互生成、具身智能、自动驾驶与空间智能。
 
 [阅读中文完整介绍、编辑原则与贡献方法 →](./README.zh-CN.md)
 
 ## English
 
-AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates market-moving **events** from capability-changing **technology**, then connects them through a focused world-model slice, curated storylines, and a source library.
+AI Worldline is an interactive, half-year-by-half-year map of the modern AI era. It separates market-moving **events** from capability-changing **technology**, with a focused world-model slice and a source library.
 
-Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, technical reports, or official announcements. The current archive covers **2017–2026**, with **93 entries**, **132 unique sources**, and **3 curated storylines**.
+Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, technical reports, or official announcements. The current archive covers **2017–2026**, with **93 entries** and **132 unique sources**.
 
 [Read the full English introduction, editorial policy, and contribution guide →](./README.en.md)
 
