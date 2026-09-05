@@ -26,6 +26,28 @@ AI 世界线按半年整理基础模型时代的演进，并把经常混在一�
 
 当前档案覆盖 **2017—2026**，包含 **93 个条目**和 **132 份去重来源**。其中世界模型切面有 **34 个条目**，覆盖模型式强化学习、预测表征、可交互生成、具身智能、自动驾驶与空间智能。
 
+## 站内 AI 问答
+
+右下角的「问 AI」对话框会依据**整条世界线的文本知识**（页面内已加载的全部条目）以及**你当前正在查看的页面**（所在路由、筛选切面、选中的条目）来回答提问，支持从条目面板一键追问。
+
+对话通过任意 OpenAI 兼容的 Chat Completions 接口完成，配置方式二选一：
+
+- **本地实测**：`CHAT_API_KEY=你的密钥 npm run preview`，打开 `http://127.0.0.1:8808/` 即开箱即用——预览服务自带同源转发代理，密钥只在本机进程内，不会写入仓库或暴露给浏览器（默认上游为阿里云编码套餐网关 `coding.dashscope.aliyuncs.com` + `glm-5`，可用 `CHAT_MODEL` / `CHAT_UPSTREAM` 覆盖）；
+- **站点维护者**：在 [`chat-config.js`](./chat-config.js) 中预填 `endpoint` 与 `model`（若自建了持有密钥的转发代理，例如部署在已有服务器上的转发端点，也可一并内置密钥）；
+- **访客**：点对话框右上角 ⚙ 填入自己的端点、模型名与 API 密钥，密钥只保存在访客浏览器本地，不经过本站服务器。
+
+## 自动更新
+
+自动更新管线**已实现**（抓取 → 去重打分 → LLM 起草 → Draft PR 人工审校）：
+
+```bash
+npm run collect   # 抓取 watchlist 来源（arXiv / HuggingFace / 实验室官方博客 / GitHub releases）
+npm run dedupe    # 对照既有条目去重并按相关性打分
+LLM_API_KEY=sk-xxx npm run draft   # LLM 起草候选条目（来源 URL 防编造校验）
+```
+
+CI（`update-watch.yml`）每日定时运行并自动开 Draft PR，条目一律 `watching` 状态、经人工审校后方可合并。架构与护栏见 [`docs/auto-update-roadmap.md`](./docs/auto-update-roadmap.md)。
+
 ## 本地运行
 
 网站是无运行时依赖的静态页面：
@@ -58,7 +80,10 @@ data/schema.json         编辑器可识别的 JSON Schema
 scripts/                 数据验证与生成脚本
 timeline-data.js         生成的浏览器数据文件
 app.js                   筛选、搜索、永久链接与详情交互
+chat-config.js           站内 AI 问答的端点与模型配置
+chat-widget.js           站内 AI 问答对话框
 styles.css               视觉系统与响应式布局
+docs/                    规划与设计文档
 .github/                 CI、Pages 部署和贡献表单
 ```
 

@@ -1,0 +1,63 @@
+name: Update watch
+
+# 自动更新管线：抓取来源 → 去重打分 → LLM 起草 → Draft PR（人工审校后合并）。
+# 需要的仓库 Secret：LLM_API_KEY（OpenAI 兼容接口密钥，如阿里云编码套餐的套餐专属 Key）。
+# 可选的仓库 Variable：LLM_BASE_URL（默认阿里云 coding 网关）、LLM_MODEL（默认 glm-5）。
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      min_new:
+        description: "入围候选少于该数量时跳过起草（定时运行默认 3）"
+        default: "1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-watch
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Restore inbox state
+        uses: actions/cache@v4
+        with:
+          path: data/inbox
+          key: inbox-${{ github.run_id }}
+          restore-keys: |
+            inbox-
+      - name: Collect sources
+        run: npm run collect
+      - name: Dedupe and rank candidates
+        run: npm run dedupe
+      - name: Draft candidate entries
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+        run: node scripts/draft-candidates.mjs --min-new "${{ github.event_name == 'schedule' && '3' || inputs.min_new }}" --limit 5
+      - name: Build candidate files
+        run: node scripts/build-candidate-branch.mjs
+      - name: Prepare PR metadata
+        id: meta
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - name: Create draft PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: auto/candidates-${{ steps.meta.outputs.date }}
+          delete-branch: true
+          draft: true
+          title: "[Auto] 候选条目 ${{ steps.meta.outputs.date }} · 需人工审校"
+          body-path: data/inbox/pr-body-${{ steps.meta.outputs.date }}.md
+          add-paths: |
+            data/timeline.json
+            timeline-data.js

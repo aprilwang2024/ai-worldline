@@ -38,6 +38,15 @@ Then open `http://127.0.0.1:8808/`.
 
 You can also open `index.html` directly. Node.js is only required when changing the canonical dataset.
 
+## Ask AI
+
+The "问 AI" widget in the bottom-right corner answers questions using the full text knowledge of the timeline (every loaded entry) plus the page you are currently viewing (route, active slice, selected entry), and can be invoked directly from an entry's source panel. It talks to any OpenAI-compatible Chat Completions endpoint:
+
+- **Local preview with a real model**: `CHAT_API_KEY=your-key npm run preview`, then open `http://127.0.0.1:8808/` — the preview server ships a same-origin proxy, so the key stays in the local process and never reaches the browser or the repository (defaults to Zhipu `glm-5`; override with `CHAT_MODEL` / `CHAT_UPSTREAM`);
+- **Site maintainers** can preset `endpoint` and `model` in [`chat-config.js`](./chat-config.js) (optionally with a key held by a private proxy), or **visitors** can enter their own credentials via the ⚙ panel — keys are stored only in the visitor's browser.
+
+The scheduled update pipeline (collect → dedupe and rank → LLM draft → human-reviewed draft PRs) is implemented; see [`docs/auto-update-roadmap.md`](./docs/auto-update-roadmap.md) and `npm run collect` / `npm run dedupe` / `npm run draft`.
+
 ## Contribute an event
 
 The canonical archive lives in [`data/timeline.json`](./data/timeline.json), not in the generated JavaScript bundle.
@@ -60,7 +69,10 @@ data/schema.json         JSON Schema for editors
 scripts/                 validation and data generation
 timeline-data.js         generated browser-compatible bundle
 app.js                   filters, search, permalinks, and details
+chat-config.js           endpoint and model config for the in-site AI chat
+chat-widget.js           in-site AI chat widget
 styles.css               visual system and responsive layout
+docs/                    planning and design documents
 .github/                 CI, Pages deployment, and contribution forms
 ```
 

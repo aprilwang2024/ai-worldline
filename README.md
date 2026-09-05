@@ -27,6 +27,8 @@ AI 世界线是一张按半年整理的基础模型时代演进图谱。它把�
 
 当前档案覆盖 **2017—2026**，包含 **93 个条目**和 **132 份去重来源**。世界模型切面有 **34 个条目**，覆盖模型式强化学习、预测表征、可交互生成、具身智能、自动驾驶与空间智能。
 
+站内右下角的「问 AI」对话框会依据整条世界线的文本知识和你正在查看的页面回答提问（本地可用 `CHAT_API_KEY=密钥 npm run preview` 一键接 GLM 实测，见[中文说明](./README.zh-CN.md)）。自动更新管线（抓取 → 去重 → LLM 起草 → Draft PR 人工审校）已实现，设计见 [`docs/auto-update-roadmap.md`](./docs/auto-update-roadmap.md)。
+
 [阅读中文完整介绍、编辑原则与贡献方法 →](./README.zh-CN.md)
 
 ## English
@@ -34,6 +36,8 @@ AI 世界线是一张按半年整理的基础模型时代演进图谱。它把�
 AI Worldline is an interactive, half-year-by-half-year map of foundation models, agents, and world models. It separates market-moving **events** from capability-changing **technology**, with a focused world-model slice and a source library.
 
 Every entry explains what happened, why it mattered, what it changed, and links back to papers, code, technical reports, or official announcements. The current archive covers **2017–2026**, with **93 entries** and **132 unique sources**.
+
+The "问 AI" widget in the bottom-right corner answers questions from the full timeline knowledge plus the page you are viewing (see the [English README](./README.en.md); the auto-update design lives in [`docs/auto-update-roadmap.md`](./docs/auto-update-roadmap.md)).
 
 [Read the full English introduction, editorial policy, and contribution guide →](./README.en.md)
 
