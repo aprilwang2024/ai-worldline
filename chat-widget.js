@@ -1,11 +1,14 @@
 /*
- * 站内 AI 对话框 — 依据整条世界线的文本知识 + 用户当前页面回答提问。
+ * 站内 AI 助手「伽利略」— 依据整条世界线的文本知识 + 用户当前页面回答提问。
  *
  * 知识全部来自页面已加载的 window.AI_WORLDLINE_DATA（data/timeline.json 的构建产物）：
  * 全量条目以一行索引进入系统提示，与提问相关的条目再附完整详情，
  * 因此无需任何服务端检索组件。对话通过 OpenAI 兼容的
  * Chat Completions 接口完成，端点与密钥来自 chat-config.js，
  * 访客也可以在面板设置里填自己的密钥（仅存 localStorage）。
+ *
+ * 交互：伽利略平时是一个可拖动的圆形按钮吸附在页面左右边缘（位置持久化），
+ * 点击后从按钮所在方位展开为对话框；选中页面文字后右键可选择「让伽利略讨论」。
  */
 (function () {
   "use strict";
@@ -281,10 +284,12 @@
   const root = document.createElement("div");
   root.className = "ai-chat";
   root.innerHTML = `
-    <button class="ai-chat-fab" type="button" aria-label="打开 AI 问答">${icons.chat}<span>问 AI</span></button>
-    <section class="ai-chat-panel" aria-label="AI 问答" hidden>
+    <button class="ai-chat-fab" type="button" aria-label="伽利略 · AI 世界线助手" title="伽利略 · AI 世界线助手（可拖动到页面边缘吸附）">
+      <span class="ai-chat-face" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="ai-chat-face-body" cx="24" cy="24" r="20"/><g class="ai-chat-eyes"><circle cx="17.5" cy="20.5" r="2.5"/><circle cx="30.5" cy="20.5" r="2.5"/></g><path class="ai-chat-smile" d="M18.5 29.5q5.5 4.5 11 0"/></svg></span>
+    </button>
+    <section class="ai-chat-panel" role="dialog" aria-label="伽利略 · AI 世界线助手">
       <header class="ai-chat-head">
-        <div class="ai-chat-title">${icons.chat}<span>问 AI · 世界线助手</span></div>
+        <div class="ai-chat-title">${icons.chat}<span>伽利略 · 世界线助手</span></div>
         <div class="ai-chat-head-actions">
           <button class="ai-chat-icon-button" type="button" data-chat-action="settings" aria-label="对话设置" title="对话设置">${icons.gear}</button>
           <button class="ai-chat-icon-button" type="button" data-chat-action="clear" aria-label="清空对话" title="清空对话">${icons.trash}</button>
@@ -322,8 +327,45 @@
     contextChip.textContent = `当前页面：${describeView(getView())}`;
   }
 
+  // ---------- 边缘吸附与拖拽 ----------
+  const DOCK_KEY = "ai-worldline-chat-dock";
+
+  function loadDock() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOCK_KEY) || "null");
+      if (saved && (saved.side === "left" || saved.side === "right") && typeof saved.ratio === "number") {
+        return { side: saved.side, ratio: Math.min(0.92, Math.max(0.08, saved.ratio)) };
+      }
+    } catch (error) { /* 隐私模式下使用默认位置 */ }
+    return { side: "right", ratio: 0.64 };
+  }
+
+  let dock = loadDock();
+  let dragState = null;
+
+  function isOpen() {
+    return panel.classList.contains("is-open");
+  }
+
+  function applyDock({ snap = false } = {}) {
+    root.classList.toggle("dock-left", dock.side === "left");
+    root.classList.toggle("dock-right", dock.side === "right");
+    const fabHeight = fab.offsetHeight || 54;
+    const top = Math.round(dock.ratio * window.innerHeight - fabHeight / 2);
+    fab.style.top = `${Math.min(window.innerHeight - fabHeight - 12, Math.max(12, top))}px`;
+    if (snap) {
+      fab.classList.add("is-snapping");
+      window.setTimeout(() => fab.classList.remove("is-snapping"), 380);
+    }
+    const originX = dock.side === "left" ? "0%" : "100%";
+    const originY = dock.ratio <= 0.5 ? "top" : "bottom";
+    panel.style.transformOrigin = window.innerWidth <= 760 ? "50% 100%" : `${originX} ${originY}`;
+  }
+
   function open(prefill = "") {
-    panel.hidden = false;
+    applyDock();
+    panel.classList.add("is-open");
+    panel.setAttribute("aria-hidden", "false");
     fab.classList.add("is-hidden");
     refreshContextChip();
     if (prefill) {
@@ -334,10 +376,104 @@
   }
 
   function close() {
-    panel.hidden = true;
+    panel.classList.remove("is-open");
+    panel.setAttribute("aria-hidden", "true");
     settingsForm.hidden = true;
     fab.classList.remove("is-hidden");
   }
+
+  function discuss(selection) {
+    const trimmed = String(selection || "").trim().slice(0, 1200);
+    if (trimmed) open(`我想和你讨论页面上选中的这段内容：\n\n「${trimmed}」\n\n请先概括它的要点，再结合世界线知识库谈谈你的看法。`);
+    else open();
+  }
+
+  fab.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    dragState = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startTop: fab.getBoundingClientRect().top, moved: false };
+    try { fab.setPointerCapture(event.pointerId); } catch (error) { /* 合成事件或无真实指针时忽略 */ }
+  });
+  fab.addEventListener("pointermove", (event) => {
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    if (!dragState.moved && Math.hypot(deltaX, deltaY) > 6) {
+      dragState.moved = true;
+      fab.classList.add("is-dragging");
+    }
+    if (!dragState.moved) return;
+    const fabHeight = fab.offsetHeight;
+    const nextTop = Math.min(window.innerHeight - fabHeight - 12, Math.max(12, dragState.startTop + deltaY));
+    fab.style.top = `${nextTop}px`;
+  });
+  fab.addEventListener("pointerup", (event) => {
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    const wasDrag = dragState.moved;
+    const endX = event.clientX;
+    const endY = event.clientY;
+    fab.classList.remove("is-dragging");
+    dragState = null;
+    if (!wasDrag) {
+      open();
+      return;
+    }
+    dock.side = endX < window.innerWidth / 2 ? "left" : "right";
+    dock.ratio = Math.min(0.92, Math.max(0.08, endY / window.innerHeight));
+    try { localStorage.setItem(DOCK_KEY, JSON.stringify(dock)); } catch (error) { /* 忽略持久化失败 */ }
+    applyDock({ snap: true });
+  });
+  fab.addEventListener("pointercancel", () => {
+    fab.classList.remove("is-dragging");
+    dragState = null;
+    applyDock({ snap: true });
+  });
+  // 键盘激活（Enter/Space 触发的 click 没有 detail），避免与 pointerup 重复打开
+  fab.addEventListener("click", (event) => { if (event.detail === 0) open(); });
+  window.addEventListener("resize", () => applyDock());
+
+  // ---------- 选中文本 → 右键发送给伽利略 ----------
+  let menuSelection = "";
+  const contextMenu = document.createElement("div");
+  contextMenu.className = "ai-chat-context-menu";
+  contextMenu.setAttribute("role", "menu");
+  contextMenu.setAttribute("aria-label", "发送给伽利略");
+  contextMenu.setAttribute("aria-hidden", "true");
+  contextMenu.innerHTML = `<button type="button" role="menuitem" data-menu-action="discuss">${icons.chat}<span>让伽利略讨论这段内容</span></button>`;
+
+  function isMenuOpen() {
+    return contextMenu.classList.contains("is-open");
+  }
+
+  function hideContextMenu() {
+    contextMenu.classList.remove("is-open");
+    contextMenu.setAttribute("aria-hidden", "true");
+    menuSelection = "";
+  }
+
+  document.addEventListener("contextmenu", (event) => {
+    const selection = String(window.getSelection?.() || "").trim();
+    if (selection.length < 2 || root.contains(event.target)) { hideContextMenu(); return; }
+    event.preventDefault();
+    menuSelection = selection.slice(0, 1200);
+    const menuWidth = 248;
+    const menuHeight = 44;
+    contextMenu.style.left = `${Math.max(12, Math.min(event.clientX, window.innerWidth - menuWidth - 12))}px`;
+    contextMenu.style.top = `${Math.max(12, Math.min(event.clientY, window.innerHeight - menuHeight - 12))}px`;
+    contextMenu.classList.add("is-open");
+    contextMenu.setAttribute("aria-hidden", "false");
+  });
+  contextMenu.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-menu-action]")) return;
+    const selection = menuSelection;
+    hideContextMenu();
+    discuss(selection);
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (isMenuOpen() && !contextMenu.contains(event.target)) hideContextMenu();
+  }, true);
+  window.addEventListener("blur", hideContextMenu);
+  window.addEventListener("resize", hideContextMenu);
+  window.addEventListener("scroll", hideContextMenu, true);
 
   function toggleSettings() {
     settingsForm.hidden = !settingsForm.hidden;
@@ -369,8 +505,8 @@
     if (messages.length) return;
     const configured = isConfigured();
     appendMessage("assistant", configured
-      ? "我可以依据本站收录的全部条目和你正在看的页面回答问题。试试：\n- 世界模型这条研究线是怎么演进的？\n- 2024 年有哪些关键发布？\n- 当前选中的条目为什么重要？"
-      : "我可以依据本站收录的全部条目和你正在看的页面回答问题，但还没有配置对话模型。请点右上角 ⚙ 填入任意 OpenAI 兼容 API（端点、模型名、密钥），密钥只保存在你的浏览器本地。");
+      ? "我是伽利略，本站的世界线助手 🪐 我可以依据收录的全部条目和你正在看的页面回答问题。试试：\n- 世界模型这条研究线是怎么演进的？\n- 2024 年有哪些关键发布？\n- 选中页面里的一段文字，右键发给我讨论"
+      : "我是伽利略，本站的世界线助手 🪐 我可以依据收录的全部条目和你正在看的页面回答问题，但还没有配置对话模型。请点右上角 ⚙ 填入任意 OpenAI 兼容 API（端点、模型名、密钥），密钥只保存在你的浏览器本地。");
   }
 
   async function send() {
@@ -444,7 +580,6 @@
     }
   }
 
-  fab.addEventListener("click", () => open());
   root.addEventListener("click", (event) => {
     const button = event.target.closest("[data-chat-action]");
     if (!button) return;
@@ -481,12 +616,14 @@
   });
   input.addEventListener("compositionend", autosize);
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || panel.hidden) return;
+    if (event.key !== "Escape") return;
+    if (isMenuOpen()) { hideContextMenu(); return; }
+    if (!isOpen()) return;
     if (!settingsForm.hidden) settingsForm.hidden = true;
     else close();
   });
   function onAppStateChange() {
-    if (!panel.hidden) refreshContextChip();
+    if (isOpen()) refreshContextChip();
   }
   // 筛选等站内状态通过 history.pushState/replaceState 写入，不会触发 hashchange，
   // 在这里包装一层以便面板打开时实时更新「当前页面」提示。
@@ -510,9 +647,12 @@
   window.addEventListener("popstate", onAppStateChange);
 
   updateWelcome();
+  applyDock({ snap: false });
   document.body.append(root);
+  document.body.append(contextMenu);
   window.AI_WORLDLINE_CHAT = {
     open,
     close: close,
+    discuss,
   };
 })();

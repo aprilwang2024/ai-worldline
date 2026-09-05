@@ -1118,36 +1118,75 @@ svg {
   }
 }
 
-/* ---------- AI 对话框（chat-widget.js） ---------- */
+/* ---------- 伽利略 · AI 助手（chat-widget.js） ---------- */
 
+@keyframes ai-chat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes ai-chat-blink {
+  0%, 91%, 97%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.12); }
+}
+@keyframes ai-chat-squash {
+  0% { transform: scale(1, 1); }
+  40% { transform: scale(1.14, 0.86); }
+  70% { transform: scale(0.94, 1.08); }
+  100% { transform: scale(1, 1); }
+}
+
+/* 吸附按钮：可拖动，松手后吸附到最近边缘 */
 .ai-chat-fab {
   position: fixed;
-  right: 26px;
-  bottom: 26px;
+  top: 60%;
+  right: 20px;
   z-index: 90;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 20px;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
   border: 1px solid var(--rule-strong);
-  border-radius: 999px;
-  color: var(--white);
-  background: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: var(--shadow-float);
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 10px 26px rgba(12, 24, 45, 0.18);
+  cursor: grab;
+  touch-action: none;
+  animation: ai-chat-float 3.8s ease-in-out infinite;
+  transition: top 0.38s cubic-bezier(0.25, 1.45, 0.4, 1), transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s ease;
 }
-.ai-chat-fab svg { width: 17px; height: 17px; }
-.ai-chat-fab:hover { transform: translateY(-2px); background: var(--cobalt); }
-.ai-chat-fab.is-hidden { display: none; }
+.dock-left .ai-chat-fab { left: 20px; right: auto; }
+.ai-chat-fab:hover { box-shadow: 0 14px 34px rgba(12, 24, 45, 0.24); }
+.ai-chat-fab:focus-visible { outline-offset: 4px; }
+.ai-chat-fab.is-dragging {
+  cursor: grabbing;
+  z-index: 95;
+  animation: none;
+  transform: scale(1.12);
+  box-shadow: var(--shadow-float);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ai-chat-fab.is-snapping .ai-chat-face { animation: ai-chat-squash 0.38s ease; }
+.ai-chat-fab.is-hidden { opacity: 0; transform: scale(0.4); pointer-events: none; animation: none; }
 
+.ai-chat-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.18s ease;
+}
+.ai-chat-fab:hover .ai-chat-face { transform: scale(1.07) rotate(-3deg); }
+.ai-chat-face svg { display: block; width: 100%; height: 100%; }
+.ai-chat-face-body { fill: var(--cobalt); }
+.ai-chat-fab:hover .ai-chat-face-body { fill: var(--cobalt-bright); }
+.ai-chat-eyes circle { fill: var(--white); transform-box: fill-box; transform-origin: center; animation: ai-chat-blink 4.4s infinite; }
+.ai-chat-eyes circle:last-child { animation-delay: 0.08s; }
+.ai-chat-smile { fill: none; stroke: var(--white); stroke-width: 2.4; stroke-linecap: round; }
+
+/* 对话框：从按钮所在方位展开 */
 .ai-chat-panel {
   position: fixed;
-  right: 26px;
-  bottom: 26px;
+  right: 24px;
+  bottom: 24px;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -1158,8 +1197,20 @@ svg {
   background: var(--white);
   box-shadow: var(--shadow-float);
   overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.72) translateY(18px);
+  transition: transform 0.3s cubic-bezier(0.22, 1.35, 0.32, 1), opacity 0.2s ease, visibility 0s linear 0.3s;
 }
-.ai-chat-panel[hidden] { display: none; }
+.dock-left .ai-chat-panel { left: 24px; right: auto; }
+.ai-chat-panel.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: transform 0.36s cubic-bezier(0.22, 1.35, 0.32, 1), opacity 0.22s ease;
+}
 
 .ai-chat-head {
   display: flex;
@@ -1320,13 +1371,54 @@ svg {
   text-align: center;
 }
 
+/* 选中文字后的右键菜单 */
+.ai-chat-context-menu {
+  position: fixed;
+  z-index: 110;
+  min-width: 236px;
+  padding: 5px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 14px 40px rgba(12, 24, 45, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.92) translateY(-4px);
+  transform-origin: 0 0;
+  transition: opacity 0.14s ease, transform 0.16s cubic-bezier(0.2, 1.3, 0.4, 1), visibility 0s linear 0.16s;
+}
+.ai-chat-context-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity 0.12s ease, transform 0.16s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.ai-chat-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.ai-chat-context-menu button:hover { color: var(--cobalt); background: var(--cobalt-soft); }
+.ai-chat-context-menu svg { width: 15px; height: 15px; }
+
 @media (max-width: 760px) {
-  .ai-chat-fab { right: 16px; bottom: 16px; padding: 12px 18px; }
+  .ai-chat-fab { width: 48px; height: 48px; }
   .ai-chat-panel {
-    right: 12px;
     left: 12px;
+    right: 12px;
     bottom: 12px;
     width: auto;
     height: min(72vh, 560px);
+    transform: scale(0.8) translateY(24px);
+    transform-origin: 50% 100%;
   }
 }
