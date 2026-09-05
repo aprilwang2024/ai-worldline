@@ -31,7 +31,14 @@
       endpoint: text(saved.endpoint) || text(defaults.endpoint),
       model: text(saved.model) || text(defaults.model),
       apiKey: text(saved.apiKey) || text(defaults.apiKey),
+      // 星空专用快速模型：留空则回退到对话模型
+      starModel: text(saved.starModel) || text(defaults.starModel),
     };
+  }
+
+  function generationModel() {
+    const settings = loadSettings();
+    return settings.starModel || settings.model;
   }
 
   function text(value) {
@@ -43,25 +50,65 @@
     return Boolean(settings.endpoint && settings.model);
   }
 
-  async function callLLM(messages, temperature = 0.6) {
+  async function callLLM(messages, { temperature = 0.6, onDelta = null } = {}) {
     const settings = loadSettings();
-    if (!settings.endpoint || !settings.model) throw new Error("还没有配置对话模型");
+    const model = generationModel();
+    if (!settings.endpoint || !model) throw new Error("还没有配置对话模型");
     const base = settings.endpoint.replace(/\/+$/, "");
+    const body = {
+      model,
+      messages,
+      temperature,
+      stream: Boolean(onDelta),
+      // qwen 系模型走非思考模式，星空生成明显更快
+      ...(model.startsWith("qwen") ? { enable_thinking: false } : {}),
+    };
     const response = await fetch(`${base}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {}),
       },
-      body: JSON.stringify({ model: settings.model, messages, temperature }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(300000),
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} — ${(await response.text().catch(() => "")).slice(0, 160)}`);
     }
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+    if (onDelta && contentType.includes("text/event-stream")) {
+      let full = "";
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split(/\n\n/);
+        buffer = chunks.pop() || "";
+        for (const chunk of chunks) {
+          for (const line of chunk.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content;
+              if (typeof delta === "string" && delta) {
+                full += delta;
+                onDelta(delta, full);
+              }
+            } catch (error) { /* 忽略不完整分片 */ }
+          }
+        }
+      }
+      if (!full.trim()) throw new Error("模型没有返回内容");
+      return full;
+    }
     const payload = await response.json();
     const content = payload?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim()) throw new Error("模型没有返回内容");
+    if (onDelta) onDelta(content, content);
     return content;
   }
 
@@ -137,35 +184,80 @@
     return { lens: String(payload.lens || "").slice(0, 30), nodes, edges };
   }
 
+  // 流式增量解析：模型输出的 JSON 每完成一个节点/边对象就立即回调，
+  // 让星空「逐点、逐线」生长，而不是等全部生成完才出现。
+  function createStreamingGraphParser({ onNode, onEdge }) {
+    const knownEventIds = new Set(data.events.map((event) => event.id));
+    const seenNodes = new Set();
+    const seenEdges = new Set();
+    let buf = "";
+    let cursor = 0;
+    let inString = false;
+    let escaped = false;
+    let depth = 0;
+    let objectStart = -1;
+
+    function handleObject(raw) {
+      let obj;
+      try { obj = JSON.parse(raw); } catch (error) { return; }
+      if (!obj || typeof obj !== "object") return;
+      if (typeof obj.source === "string" && typeof obj.target === "string") {
+        const key = [obj.source, obj.target].sort().join("→");
+        if (!seenEdges.has(key) && obj.source !== obj.target) {
+          seenEdges.add(key);
+          onEdge({ source: obj.source, target: obj.target, relation: String(obj.relation || "").slice(0, 10) });
+        }
+        return;
+      }
+      if (typeof obj.label === "string" && !seenNodes.has(obj.id)) {
+        // normalizeNode 会把合法 id 写入 seenNodes（去重），失败的节点留待后续重试
+        const node = normalizeNode(obj, seenNodes, knownEventIds);
+        if (node) onNode(node);
+      }
+    }
+
+    return {
+      feed(chunk) {
+        buf += chunk;
+        for (; cursor < buf.length; cursor += 1) {
+          const ch = buf[cursor];
+          if (inString) {
+            if (escaped) escaped = false;
+            else if (ch === "\\") escaped = true;
+            else if (ch === '"') inString = false;
+            continue;
+          }
+          if (ch === '"') { inString = true; continue; }
+          if (ch === "{") { depth += 1; if (depth === 2) objectStart = cursor; continue; }
+          if (ch === "}") {
+            if (depth === 2 && objectStart >= 0) handleObject(buf.slice(objectStart, cursor + 1));
+            depth -= 1;
+            objectStart = -1;
+          }
+        }
+      },
+    };
+  }
+
   // ---------- 图谱状态 ----------
 
   const graph = { lens: "", nodes: new Map(), edges: [] };
   const expanded = new Set();
+  let narrative = "";
   const engine = { current: null };
   let nodeSelectHandler = null;
   let busy = false;
   let mountedHost = null;
 
-  function layoutInitial(nodes) {
-    const count = Math.max(nodes.length, 1);
-    nodes.forEach((node, index) => {
-      const angle = (index / count) * Math.PI * 2;
-      const radius = 130 + (node.magnitude - 3) * 18 + Math.random() * 60;
-      node.x = Math.cos(angle) * radius;
-      node.y = Math.sin(angle) * radius * 0.82;
-      node.vx = 0;
-      node.vy = 0;
-    });
-  }
-
-  function makeRuntimeNode(node, anchor) {
+  function makeRuntimeNode(node, anchor = null, index = 0) {
+    const base = anchor ? { x: anchor.x, y: anchor.y } : positionForIndex(index);
     const angle = Math.random() * Math.PI * 2;
-    const radius = 46 + Math.random() * 34;
+    const radius = anchor ? 46 + Math.random() * 34 : 8 + Math.random() * 14;
     return {
       ...node,
       degree: 0,
-      x: (anchor?.x || 0) + Math.cos(angle) * radius,
-      y: (anchor?.y || 0) + Math.sin(angle) * radius * 0.8,
+      x: base.x + Math.cos(angle) * radius,
+      y: base.y + Math.sin(angle) * radius * 0.8,
       vx: 0,
       vy: 0,
       phase: Math.random() * Math.PI * 2,
@@ -173,6 +265,13 @@
       alpha: 0,
       expanded: false,
     };
+  }
+
+  // 螺旋布点：流式生成时每颗新星按黄金角依次落位
+  function positionForIndex(index) {
+    const angle = index * 2.39996;
+    const radius = 56 + Math.sqrt(index + 1) * 44;
+    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius * 0.85 };
   }
 
   function rebuildRuntime() {
@@ -185,12 +284,39 @@
 
   // ---------- LLM 生成与扩展 ----------
 
-  async function generate(lens, onStatus = () => {}) {
+  async function generate(lens, handlers = {}) {
+    const { onStatus = () => {}, onDelta = () => {}, onNode = () => {}, onEdge = () => {} } = handlers;
     if (busy) throw new Error("伽利略正在编织另一片星空");
     if (!isConfigured()) throw new Error("还没有配置对话模型：请先在伽利略设置里填入 API 信息");
     busy = true;
     try {
+      graph.lens = "";
+      graph.nodes.clear();
+      graph.edges = [];
+      expanded.clear();
+      rebuildRuntime();
       onStatus(`正在读取整条世界线，围绕「${lens}」重新编织…`);
+
+      const parser = createStreamingGraphParser({
+        onNode(node) {
+          const runtime = makeRuntimeNode(node, null, graph.nodes.size);
+          graph.nodes.set(node.id, runtime);
+          engine.current?.addNode(runtime);
+          onNode(runtime);
+        },
+        onEdge(edge) {
+          const source = graph.nodes.get(edge.source);
+          const target = graph.nodes.get(edge.target);
+          if (!source || !target) return;
+          if (graph.edges.some((existing) => existing.source === edge.source && existing.target === edge.target)) return;
+          graph.edges.push(edge);
+          source.degree += 1;
+          target.degree += 1;
+          engine.current?.addEdge(edge);
+          onEdge(edge);
+        },
+      });
+
       const system = [
         "你是「AI 世界线」的策展助理伽利略。用户给了一个兴趣视角，请以该视角把下面的世界线条目索引重新组织成一张知识图谱（不是时间顺序，而是视角下的概念聚类与关联）。",
         "",
@@ -203,36 +329,51 @@
         "3. eventIds 只能取自下方索引的真实 id，用于把星点锚定回条目；",
         "4. magnitude 表示该节点在视角下的重要度（5 最亮）。",
         "",
-        "【世界线条目索引（日期｜类别｜标题｜一句话摘要）】",
+        "【世界线条目索引（id｜日期｜类别｜标题｜一句话摘要）】",
         eventIndexText(),
       ].join("\n");
+
       const content = await callLLM([
         { role: "system", content: system },
         { role: "user", content: `兴趣视角：${lens}` },
-      ], 0.55);
+      ], {
+        temperature: 0.55,
+        onDelta: (delta) => {
+          parser.feed(delta);
+          onDelta(delta);
+        },
+      });
+
+      // 流结束：以完整文本做最终校验，剔除增量阶段混入的不合格节点/边（保留已落位坐标）
       const parsed = parseGraphPayload(content, new Set());
       graph.lens = parsed.lens || lens;
-      graph.nodes.clear();
-      graph.edges = [];
-      parsed.nodes.forEach((node) => {
-        graph.nodes.set(node.id, makeRuntimeNode(node, null));
+      const kept = new Set();
+      parsed.nodes.forEach((node, index) => {
+        kept.add(node.id);
+        const existing = graph.nodes.get(node.id);
+        if (existing) {
+          Object.assign(existing, node);
+          return;
+        }
+        graph.nodes.set(node.id, makeRuntimeNode(node, null, index));
       });
-      graph.edges = parsed.edges.filter((edge) => graph.nodes.has(edge.source) && graph.nodes.has(edge.target));
+      graph.edges = parsed.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target));
+      graph.nodes.forEach((node) => { node.degree = 0; });
       graph.edges.forEach((edge) => {
-        graph.nodes.get(edge.source).degree += 1;
-        graph.nodes.get(edge.target).degree += 1;
+        const source = graph.nodes.get(edge.source);
+        const target = graph.nodes.get(edge.target);
+        source.degree += 1;
+        target.degree += 1;
       });
-      expanded.clear();
-      layoutInitial([...graph.nodes.values()]);
       rebuildRuntime();
       engine.current?.pulse();
-      return { lens: graph.lens, nodeCount: graph.nodes.size, edgeCount: graph.edges.length };
+      return { lens: graph.lens, nodeCount: graph.nodes.size, edgeCount: graph.edges.length, model: generationModel() };
     } finally {
       busy = false;
     }
   }
 
-  async function expandNode(nodeId, onStatus = () => {}) {
+  async function expandNode(nodeId, onStatus = () => {}, onDelta = null) {
     if (busy) throw new Error("伽利略正在展开另一片星域");
     const anchor = graph.nodes.get(nodeId);
     if (!anchor) throw new Error("找不到这颗星");
@@ -270,11 +411,12 @@
       const content = await callLLM([
         { role: "system", content: system },
         { role: "user", content: `请展开「${anchor.label}」。` },
-      ], 0.7);
+      ], { temperature: 0.7, onDelta: typeof onDelta === "function" ? onDelta : null });
       const parsed = parseGraphPayload(content, new Set(graph.nodes.keys()));
       const added = parsed.nodes.map((node) => {
         const runtime = makeRuntimeNode(node, anchor);
         graph.nodes.set(node.id, runtime);
+        engine.current?.addNode(runtime);
         return runtime;
       });
       if (!added.length) throw new Error("模型没有产出新节点（可能与已有星点重复）");
@@ -282,11 +424,11 @@
       newEdges.forEach((edge) => {
         graph.nodes.get(edge.source).degree += 1;
         graph.nodes.get(edge.target).degree += 1;
+        engine.current?.addEdge(edge);
       });
       graph.edges = graph.edges.concat(newEdges);
       expanded.add(nodeId);
       anchor.expanded = true;
-      rebuildRuntime();
       engine.current?.pulse();
       return { added: added.length, edges: newEdges.length };
     } finally {
@@ -314,6 +456,8 @@
     let edges = [];
     let simAlpha = 0;
     let raf = 0;
+    let meteors = [];
+    let nextMeteorAt = 2000;
     const bgStars = Array.from({ length: 110 }, () => ({
       nx: Math.random(),
       ny: Math.random(),
@@ -406,6 +550,36 @@
         ctx.fill();
       });
       ctx.globalAlpha = 1;
+
+      // 流星：随机划过，让等待与浏览都有生命感
+      if (now > nextMeteorAt) {
+        meteors.push({
+          x: width * (0.15 + Math.random() * 0.7),
+          y: height * (0.05 + Math.random() * 0.35),
+          vx: 90 + Math.random() * 130,
+          vy: 55 + Math.random() * 75,
+          born: now,
+          life: 800 + Math.random() * 500,
+        });
+        nextMeteorAt = now + 2600 + Math.random() * 4200;
+      }
+      meteors = meteors.filter((meteor) => now - meteor.born < meteor.life);
+      meteors.forEach((meteor) => {
+        const age = (now - meteor.born) / meteor.life;
+        const elapsed = (age * meteor.life) / 1000;
+        const x = meteor.x + meteor.vx * elapsed;
+        const y = meteor.y + meteor.vy * elapsed;
+        const alpha = Math.sin(Math.PI * age) * 0.8;
+        const gradient = ctx.createLinearGradient(x - meteor.vx * 0.22, y - meteor.vy * 0.22, x, y);
+        gradient.addColorStop(0, "rgba(210, 226, 255, 0)");
+        gradient.addColorStop(1, `rgba(228, 239, 255, ${alpha})`);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(x - meteor.vx * 0.22, y - meteor.vy * 0.22);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      });
 
       ctx.lineWidth = 1;
       edges.forEach((edge) => {
@@ -527,6 +701,14 @@
         edges = nextEdges;
         simAlpha = Math.max(simAlpha, 0.9);
       },
+      addNode(node) {
+        nodes.push(node);
+        simAlpha = Math.max(simAlpha, 0.65);
+      },
+      addEdge(edge) {
+        edges.push(edge);
+        simAlpha = Math.max(simAlpha, 0.5);
+      },
       pulse() { simAlpha = 1; },
       zoomBy,
       resetView() { view.x = 0; view.y = 0; view.scale = 1; },
@@ -564,6 +746,8 @@
     hasGraph: () => graph.nodes.size > 0,
     getLens: () => graph.lens,
     getNodeIds: () => [...graph.nodes.keys()],
+    getNarrative: () => narrative,
+    recordNarrative(next) { narrative = String(next || "").slice(0, 40000); },
     isBusy: () => busy,
     isMounted: () => Boolean(mountedHost),
     onNodeSelect(handler) { nodeSelectHandler = typeof handler === "function" ? handler : null; },

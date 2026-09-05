@@ -244,11 +244,13 @@
           <button class="starfield-tool" type="button" data-action="star-zoom-in">放大</button>
           <button class="starfield-tool" type="button" data-action="star-zoom-out">缩小</button>
           <button class="starfield-tool" type="button" data-action="star-reset-view">复位</button>
+          <button class="starfield-tool" type="button" data-action="star-notes">编织手记</button>
           <button class="starfield-tool" type="button" data-action="star-reask">换个镜头</button>
         </div>
       </header>
       <div class="starfield-stage" id="starfield-stage"></div>
       <aside class="starfield-info" id="starfield-info" hidden></aside>
+      <aside class="starfield-notes" id="starfield-notes" hidden><h3>编织手记 · 模型输出</h3><pre></pre></aside>
     </section>`;
     const stage = document.querySelector("#starfield-stage");
     if (!starfield) {
@@ -282,8 +284,10 @@
     const starfield = window.AI_WORLDLINE_STARFIELD;
     if (!starfield || !selectedStarNodeId) return;
     statusEl.textContent = "伽利略正在编织…";
+    let streamText = "";
     try {
-      const result = await starfield.expandNode(selectedStarNodeId, (message) => { statusEl.textContent = message; });
+      const result = await starfield.expandNode(selectedStarNodeId, (message) => { statusEl.textContent = message; }, (delta) => { streamText += delta; });
+      if (streamText) starfield.recordNarrative(`${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`);
       statusEl.textContent = result.added ? `新增 ${result.added} 颗星，这片星域已展开。` : "这片星域已展开，点击相邻的星继续。";
       const button = document.querySelector("[data-action='star-expand']");
       if (button) { button.disabled = true; button.textContent = "已展开"; }
@@ -427,6 +431,14 @@
       if (action === "star-reset-view") window.AI_WORLDLINE_STARFIELD?.resetView?.();
       if (action === "star-reask") window.AI_WORLDLINE_CHAT?.openStarPrompt?.();
       if (action === "star-expand") expandSelectedStar(document.querySelector("[data-star-status]"));
+      if (action === "star-notes") {
+        const notes = document.querySelector("#starfield-notes");
+        if (notes) {
+          const narrative = window.AI_WORLDLINE_STARFIELD?.getNarrative?.() || "";
+          notes.querySelector("pre").textContent = narrative || "还没有编织记录：选一个镜头，让伽利略为你编织星空。";
+          notes.hidden = !notes.hidden;
+        }
+      }
     }));
     document.querySelectorAll("[data-copy-source]").forEach((button) => button.addEventListener("click", () => copySource(button.dataset)));
   }

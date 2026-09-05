@@ -556,6 +556,14 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
+  const STAR_WAIT_PHRASES = [
+    "正在翻阅整条世界线…",
+    "正在挑选值得点亮的星座…",
+    "正在安排星点之间的星轨…",
+    "正在为星星写下注脚…",
+    "星光正在汇聚，请稍候…",
+  ];
+
   async function startStar(lens) {
     const starApi = star();
     if (starBusy || !starApi) return;
@@ -567,6 +575,7 @@
     starChipsShown = false;
     appendMessage("user", `围绕「${lens}」编织星空`);
     panel.querySelectorAll(".ai-chat-chips button").forEach((chip) => { chip.disabled = true; });
+    let phraseTimer = null;
     try {
       if (getView().route !== "starfield") {
         window.location.hash = "starfield";
@@ -574,15 +583,45 @@
       }
       const starHost = root.querySelector("[data-chat-starhost]");
       panel.classList.add("is-fullscreen", "is-star");
-      starHost.innerHTML = `<div class="ai-chat-star-status" data-star-status>正在点亮星空…</div>`;
-      starApi.mount(starHost);
-      const result = await starApi.generate(lens, (message) => {
-        const el = starHost.querySelector("[data-star-status]");
-        if (el) el.textContent = message;
+      starHost.innerHTML = `
+        <div class="ai-chat-star-layout">
+          <div class="ai-chat-star-canvas" data-star-canvas></div>
+          <aside class="ai-chat-star-side">
+            <header><span class="ai-chat-star-orbit" aria-hidden="true"><i></i><i></i><i></i></span><span data-star-status>正在点亮星空…</span></header>
+            <div class="ai-chat-star-log" data-star-log aria-label="模型输出"></div>
+          </aside>
+        </div>`;
+      starApi.mount(starHost.querySelector("[data-star-canvas]"));
+      const statusEl = starHost.querySelector("[data-star-status]");
+      const logEl = starHost.querySelector("[data-star-log]");
+      let phraseIndex = 0;
+      phraseTimer = window.setInterval(() => {
+        if (statusEl) statusEl.textContent = STAR_WAIT_PHRASES[phraseIndex % STAR_WAIT_PHRASES.length];
+        phraseIndex += 1;
+      }, 3200);
+
+      let narrativeText = "";
+      const stopPhrases = (message) => {
+        if (phraseTimer) { window.clearInterval(phraseTimer); phraseTimer = null; }
+        if (message && statusEl) statusEl.textContent = message;
+      };
+
+      const result = await starApi.generate(lens, {
+        onStatus: (message) => stopPhrases(message),
+        onDelta: (delta) => {
+          if (phraseTimer) stopPhrases("伽利略输出中，星点将逐一点亮…");
+          narrativeText += delta;
+          if (logEl) {
+            logEl.textContent = narrativeText;
+            logEl.scrollTop = logEl.scrollHeight;
+          }
+        },
+        onNode: () => stopPhrases(`正在逐点点亮，已到第 ${starApi.getNodeIds().length} 颗…`),
+        onEdge: () => { if (statusEl && !phraseTimer) statusEl.textContent = `正在牵引星轨，已有 ${starApi.getNodeIds().length} 星…`; },
       });
-      const done = starHost.querySelector("[data-star-status]");
-      if (done) done.textContent = `已点亮 ${result.nodeCount} 颗星 · ${result.edgeCount} 条连线，交还给星空画布…`;
-      await wait(1300);
+      starApi.recordNarrative(narrativeText);
+      stopPhrases(`完成：${result.nodeCount} 颗星 · ${result.edgeCount} 条连线，交还给星空画布…`);
+      await wait(1500);
       const stage = document.querySelector("#starfield-stage");
       if (stage) starApi.moveCanvasTo(stage);
       exitStarMode();
@@ -590,6 +629,7 @@
       exitStarMode();
       appendMessage("assistant", `星空编织失败了：${error.message}`);
     } finally {
+      if (phraseTimer) window.clearInterval(phraseTimer);
       starBusy = false;
     }
   }

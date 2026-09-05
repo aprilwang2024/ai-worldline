@@ -33,6 +33,7 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2));
 const port = Number(args.port || process.env.PORT || 8808);
 const model = args.model || process.env.CHAT_MODEL || "glm-5";
+const starModel = String(args["star-model"] || process.env.CHAT_STAR_MODEL || "qwen3.7-plus");
 const upstream = String(args.upstream || process.env.CHAT_UPSTREAM || "https://coding.dashscope.aliyuncs.com/v1").replace(/\/+$/, "");
 const apiKey = String(args.key || process.env.CHAT_API_KEY || "");
 
@@ -95,7 +96,8 @@ async function proxyChat(req, res) {
 function injectChatConfig(html) {
   const anchor = '<script src="./chat-widget.js';
   if (!html.includes(anchor)) return html;
-  const inline = `<script>window.AI_WORLDLINE_CHAT_CONFIG = Object.assign({}, window.AI_WORLDLINE_CHAT_CONFIG, { endpoint: "/v1", model: ${JSON.stringify(model)} });</script>\n    `;
+  const override = JSON.stringify({ endpoint: "/v1", model, ...(starModel ? { starModel } : {}) });
+  const inline = `<script>window.AI_WORLDLINE_CHAT_CONFIG = Object.assign({}, window.AI_WORLDLINE_CHAT_CONFIG, ${override});</script>\n    `;
   return html.replace(anchor, `${inline}${anchor}`);
 }
 
@@ -126,5 +128,5 @@ createServer(async (req, res) => {
   }
 }).listen(port, "127.0.0.1", () => {
   console.log(`ai-worldline 预览服务: http://127.0.0.1:${port}/`);
-  console.log(`对话上游: ${upstream} · 模型: ${model} · 密钥: ${apiKey ? "已配置（仅进程内存）" : "未配置（仅静态预览）"}`);
+  console.log(`对话上游: ${upstream} · 对话模型: ${model} · 星空模型: ${starModel || "(回退到对话模型)"} · 密钥: ${apiKey ? "已配置（仅进程内存）" : "未配置（仅静态预览）"}`);
 });

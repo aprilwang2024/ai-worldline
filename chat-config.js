@@ -12,6 +12,9 @@ window.AI_WORLDLINE_CHAT_CONFIG = {
   endpoint: "",
   // 默认模型名，例如 "deepseek-chat"。
   model: "",
+  // 星空（AI 画布）生成使用的快速非思考模型；留空则回退到上面的 model。
+  // 例如阿里云编码套餐网关可用 "qwen3.7-plus"（会自动附带 enable_thinking:false）。
+  starModel: "",
   // 可选：随站点内置的密钥。仅当你部署的是私有代理、且该地址不会泄露时才填写；
   // 公共站点请保持为空，让访客在界面里填自己的密钥。
   apiKey: "",
