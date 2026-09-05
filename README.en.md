@@ -40,7 +40,9 @@ You can also open `index.html` directly. Node.js is only required when changing 
 
 ## Ask AI
 
-The in-site assistant "**伽利略** (Galileo)" lives in a draggable round button that snaps to the page edges (position is remembered) and unfolds into a chat panel with a smooth animation. It answers questions using the full text knowledge of the timeline (every loaded entry) plus the page you are currently viewing (route, active slice, selected entry). Select any text on the page, right-click and choose "让伽利略讨论这段内容" to send the passage to the assistant; the entry's source panel offers a one-click shortcut as well. It talks to any OpenAI-compatible Chat Completions endpoint:
+The in-site assistant "**伽利略** (Galileo)" lives in a draggable round button that snaps to any page edge (position is remembered) and unfolds into a chat panel with a smooth animation. It answers questions using the full text knowledge of the timeline (every loaded entry) plus the page you are currently viewing (route, active slice, selected entry). Select any text on the page, right-click and choose "让伽利略讨论这段内容" to send the passage to the assistant; the entry's source panel offers a one-click shortcut as well. It talks to any OpenAI-compatible Chat Completions endpoint:
+
+The **星空 (Starfield)** tab is Galileo's AI canvas: pick an interest lens (e.g. "模型参数", "算力基础设施演进", "AI 研究者们的爱恨情仇") and Galileo re-weaves the whole timeline into an animated knowledge graph on a night-sky canvas. Click any star and it keeps expanding outward, indefinitely.
 
 - **Local preview with a real model**: `CHAT_API_KEY=your-key npm run preview`, then open `http://127.0.0.1:8808/` — the preview server ships a same-origin proxy, so the key stays in the local process and never reaches the browser or the repository (defaults to Zhipu `glm-5`; override with `CHAT_MODEL` / `CHAT_UPSTREAM`);
 - **Site maintainers** can preset `endpoint` and `model` in [`chat-config.js`](./chat-config.js) (optionally with a key held by a private proxy), or **visitors** can enter their own credentials via the ⚙ panel — keys are stored only in the visitor's browser.

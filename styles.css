@@ -1422,3 +1422,192 @@ svg {
     transform-origin: 50% 100%;
   }
 }
+
+/* ---------- 全站文本可选择（时间线条目等原为按钮，浏览器默认禁选） ---------- */
+
+#app { user-select: text; -webkit-user-select: text; }
+.ai-chat-fab, .ai-chat-face, .ai-chat-context-menu { user-select: none; -webkit-user-select: none; }
+
+/* ---------- 伽利略 · 四边吸附与星空变形补充 ---------- */
+
+.dock-top .ai-chat-panel { top: 24px; bottom: auto; left: auto; right: 24px; }
+.dock-bottom .ai-chat-panel { top: auto; }
+
+.ai-chat-panel.is-fullscreen {
+  left: 2.5vw;
+  top: 3.5vh;
+  right: auto;
+  bottom: auto;
+  width: 95vw;
+  height: 93vh;
+  border-radius: 20px;
+  transition: transform 0.5s cubic-bezier(0.22, 1.2, 0.3, 1), opacity 0.24s ease,
+    width 0.55s cubic-bezier(0.22, 1.15, 0.3, 1), height 0.55s cubic-bezier(0.22, 1.15, 0.3, 1),
+    left 0.55s cubic-bezier(0.22, 1.15, 0.3, 1), top 0.55s cubic-bezier(0.22, 1.15, 0.3, 1),
+    border-radius 0.55s ease;
+}
+
+/* 星空模式下：面板内容切换为画布容器 */
+.ai-chat-starhost {
+  position: relative;
+  display: none;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: radial-gradient(120% 100% at 50% 0%, #101a33 0%, #070b18 58%, #04060f 100%);
+}
+.ai-chat-panel.is-star .ai-chat-starhost { display: block; }
+.ai-chat-panel.is-star .ai-chat-context,
+.ai-chat-panel.is-star .ai-chat-messages,
+.ai-chat-panel.is-star .ai-chat-composer,
+.ai-chat-panel.is-star .ai-chat-foot { display: none; }
+.ai-chat-starhost .starfield-canvas-wrap { position: absolute; inset: 0; }
+.ai-chat-star-status {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: 80%;
+  transform: translate(-50%, -50%);
+  color: #cfe0ff;
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 0 14px rgba(120, 160, 255, 0.85);
+}
+
+/* 兴趣视角建议 chips */
+.ai-chat-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.ai-chat-chips button {
+  padding: 6px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.ai-chat-chips button:hover { color: var(--cobalt); border-color: var(--cobalt); background: var(--cobalt-soft); }
+.ai-chat-chips button:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- 星空路由（AI 知识图谱画布） ---------- */
+
+.starfield-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: #dfe7ff;
+  background: radial-gradient(120% 100% at 50% 0%, #101a33 0%, #070b18 58%, #04060f 100%);
+}
+.starfield-stage { position: relative; flex: 1 1 auto; overflow: hidden; }
+.starfield-canvas-wrap { position: absolute; inset: 0; }
+.starfield-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.starfield-canvas.is-panning { cursor: grabbing; }
+
+.starfield-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 28px 0;
+  pointer-events: none;
+}
+.starfield-head h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: 0.12em;
+  color: #f2f5ff;
+}
+.starfield-head p { margin: 6px 0 0; color: rgba(200, 214, 255, 0.66); font-size: 12.5px; letter-spacing: 0.05em; }
+.starfield-tools { display: flex; gap: 8px; pointer-events: auto; }
+.starfield-tool {
+  padding: 7px 14px;
+  border: 1px solid rgba(150, 175, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(220, 230, 255, 0.9);
+  background: rgba(12, 20, 42, 0.55);
+  font-size: 12.5px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.starfield-tool:hover { border-color: rgba(160, 190, 255, 0.6); color: #fff; }
+.starfield-empty {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  text-align: center;
+  color: rgba(200, 214, 255, 0.75);
+  font-size: 13.5px;
+}
+.starfield-empty button {
+  padding: 10px 22px;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 999px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.35);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.starfield-empty button:hover { background: rgba(27, 102, 227, 0.55); }
+
+.starfield-info {
+  position: absolute;
+  right: 20px;
+  top: 92px;
+  z-index: 6;
+  width: min(320px, calc(100vw - 40px));
+  max-height: calc(100% - 130px);
+  overflow-y: auto;
+  padding: 16px 18px;
+  border: 1px solid rgba(150, 175, 255, 0.24);
+  border-radius: 14px;
+  background: rgba(10, 16, 34, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+.starfield-info h3 { margin: 0 0 4px; font-size: 16.5px; color: #f2f5ff; }
+.starfield-kind {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(120, 160, 255, 0.16);
+  color: #a8c2ff;
+  font-size: 11px;
+}
+.starfield-info p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: rgba(214, 226, 255, 0.85); }
+.starfield-links { display: grid; gap: 6px; margin-bottom: 10px; }
+.starfield-links a { color: #9fc2ff; font-size: 12.5px; text-underline-offset: 3px; }
+.starfield-links a span { color: rgba(200, 214, 255, 0.5); font-size: 11px; margin-left: 6px; }
+.starfield-expand-status { min-height: 16px; margin-bottom: 8px; color: #a8c2ff; font-size: 12px; }
+.starfield-expand {
+  width: 100%;
+  padding: 9px 0;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 10px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.3);
+  font-size: 13px;
+  cursor: pointer;
+}
+.starfield-expand:hover { background: rgba(27, 102, 227, 0.5); }
+.starfield-expand:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 760px) {
+  .ai-chat-panel.is-fullscreen { left: 0; top: 0; width: 100vw; height: 100vh; border-radius: 0; }
+  .starfield-head { padding: 14px 16px 0; }
+  .starfield-head h1 { font-size: 22px; }
+  .starfield-info { right: 12px; top: 76px; }
+}

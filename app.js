@@ -36,7 +36,7 @@
   };
 
   const validLanes = new Set(["all", ...Object.keys(data.lanes)]);
-  const validRoutes = new Set(["timeline", "sources", "about"]);
+  const validRoutes = new Set(["timeline", "starfield", "sources", "about"]);
   const publicTopics = new Set(["all", "world-model", "not-world-model"]);
   const initialParams = new URLSearchParams(window.location.search);
   const requestedView = initialParams.get("view");
@@ -157,7 +157,7 @@
     const selected = state.route === "timeline" ? getSelectedEvent() : null;
     const laneLabels = { all: "事件＋技术", event: "事件", tech: "技术" };
     const topicLabels = { all: "混合显示", "world-model": "世界模型", "not-world-model": "非世界模型" };
-    const routeLabels = { timeline: "时间线", sources: "文献库", about: "关于" };
+    const routeLabels = { timeline: "时间线", starfield: "星空", sources: "文献库", about: "关于" };
     return {
       route: state.route,
       routeLabel: routeLabels[state.route] || state.route,
@@ -223,11 +223,73 @@
     if (!visible.some((event) => event.id === state.selectedId)) state.selectedId = visible.at(-1)?.id || null;
   }
 
+  let selectedStarNodeId = null;
+
   function render() {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.route === state.route));
+    if (state.route !== "starfield") window.AI_WORLDLINE_STARFIELD?.unmount?.();
     if (state.route === "timeline") renderTimeline();
+    if (state.route === "starfield") renderStarfield();
     if (state.route === "sources") renderLibrary();
     if (state.route === "about") renderAbout();
+  }
+
+  function renderStarfield() {
+    const starfield = window.AI_WORLDLINE_STARFIELD;
+    const hasGraph = Boolean(starfield?.hasGraph?.());
+    app.innerHTML = `<section class="starfield-screen" aria-label="星空 · AI 知识图谱">
+      <header class="starfield-head">
+        <div><h1>星空</h1><p>${hasGraph ? `镜头「${escapeHTML(starfield.getLens())}」 · 点击星点，伽利略会持续向外展开` : "由伽利略重新编织的世界线知识图谱"}</p></div>
+        <div class="starfield-tools">
+          <button class="starfield-tool" type="button" data-action="star-zoom-in">放大</button>
+          <button class="starfield-tool" type="button" data-action="star-zoom-out">缩小</button>
+          <button class="starfield-tool" type="button" data-action="star-reset-view">复位</button>
+          <button class="starfield-tool" type="button" data-action="star-reask">换个镜头</button>
+        </div>
+      </header>
+      <div class="starfield-stage" id="starfield-stage"></div>
+      <aside class="starfield-info" id="starfield-info" hidden></aside>
+    </section>`;
+    const stage = document.querySelector("#starfield-stage");
+    if (!starfield) {
+      stage.innerHTML = `<div class="starfield-empty"><span>星空模块尚未加载。</span></div>`;
+      return;
+    }
+    starfield.onNodeSelect(handleStarNodeSelect);
+    starfield.mount(stage);
+    bindSharedActions();
+  }
+
+  function handleStarNodeSelect(node) {
+    selectedStarNodeId = node.id;
+    const info = document.querySelector("#starfield-info");
+    if (!info) return;
+    const kindLabels = { concept: "概念", org: "机构", event: "事件", era: "时期" };
+    const links = (node.eventIds || [])
+      .map((id) => data.events.find((event) => event.id === id))
+      .filter(Boolean)
+      .map((event) => `<a href="?event=${escapeAttr(event.id)}&open=1#timeline">${escapeHTML(event.title)}<span>${escapeHTML(event.date || "")}</span></a>`)
+      .join("");
+    info.innerHTML = `<h3>${escapeHTML(node.label)}</h3><span class="starfield-kind">${kindLabels[node.kind] || node.kind}</span><p>${escapeHTML(node.summary || "")}</p>${links ? `<div class="starfield-links">${links}</div>` : ""}<div class="starfield-expand-status" data-star-status>${node.expanded ? "这片星域已展开，点击相邻的星继续。" : ""}</div><button class="starfield-expand" type="button" data-action="star-expand" ${node.expanded ? "disabled" : ""}>${node.expanded ? "已展开" : "展开周边星域"}</button>`;
+    info.hidden = false;
+    // 信息卡是动态渲染的，bindSharedActions 绑定时还不存在，这里局部绑定
+    info.querySelector("[data-action='star-expand']")?.addEventListener("click", () => {
+      expandSelectedStar(info.querySelector("[data-star-status]"));
+    });
+  }
+
+  async function expandSelectedStar(statusEl) {
+    const starfield = window.AI_WORLDLINE_STARFIELD;
+    if (!starfield || !selectedStarNodeId) return;
+    statusEl.textContent = "伽利略正在编织…";
+    try {
+      const result = await starfield.expandNode(selectedStarNodeId, (message) => { statusEl.textContent = message; });
+      statusEl.textContent = result.added ? `新增 ${result.added} 颗星，这片星域已展开。` : "这片星域已展开，点击相邻的星继续。";
+      const button = document.querySelector("[data-action='star-expand']");
+      if (button) { button.disabled = true; button.textContent = "已展开"; }
+    } catch (error) {
+      statusEl.textContent = `展开失败：${error.message}`;
+    }
   }
 
   function renderTimeline() {
@@ -338,7 +400,15 @@
     document.querySelectorAll("[data-lane]").forEach((button) => button.addEventListener("click", () => { state.lane = button.dataset.lane; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
     document.querySelectorAll("[data-topic]").forEach((button) => button.addEventListener("click", () => { state.topic = button.dataset.topic === "all" || state.topic === button.dataset.topic ? "all" : button.dataset.topic; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ historyMode: "push", open: false }); renderTimeline(); }));
     document.querySelector("#timeline-search")?.addEventListener("input", (event) => { state.query = event.target.value; state.drawerOpen = false; syncSelectionToVisibleEvents(); state.timelineHasPosition = true; writeLocationState({ open: false }); renderTimeline(); const search = document.querySelector("#timeline-search"); search?.focus(); search?.setSelectionRange(state.query.length, state.query.length); });
-    document.querySelectorAll("[data-event-id]").forEach((button) => button.addEventListener("click", () => { state.selectedId = button.dataset.eventId; state.drawerOpen = window.innerWidth <= 1050; state.timelineHasPosition = true; writeLocationState({ historyMode: "push" }); renderTimeline(); }));
+    document.querySelectorAll("[data-event-id]").forEach((button) => button.addEventListener("click", () => {
+      const selection = window.getSelection?.();
+      if (selection && !selection.isCollapsed && button.contains(selection.anchorNode)) return;
+      state.selectedId = button.dataset.eventId;
+      state.drawerOpen = window.innerWidth <= 1050;
+      state.timelineHasPosition = true;
+      writeLocationState({ historyMode: "push" });
+      renderTimeline();
+    }));
     bindSharedActions();
   }
 
@@ -352,6 +422,11 @@
       if (action === "go-current") scrollToPeriod(data.meta.currentPeriod, true);
       if (action === "scroll-left") scrollTimelineBy(-620);
       if (action === "scroll-right") scrollTimelineBy(620);
+      if (action === "star-zoom-in") window.AI_WORLDLINE_STARFIELD?.zoomBy?.(1.3);
+      if (action === "star-zoom-out") window.AI_WORLDLINE_STARFIELD?.zoomBy?.(0.78);
+      if (action === "star-reset-view") window.AI_WORLDLINE_STARFIELD?.resetView?.();
+      if (action === "star-reask") window.AI_WORLDLINE_CHAT?.openStarPrompt?.();
+      if (action === "star-expand") expandSelectedStar(document.querySelector("[data-star-status]"));
     }));
     document.querySelectorAll("[data-copy-source]").forEach((button) => button.addEventListener("click", () => copySource(button.dataset)));
   }

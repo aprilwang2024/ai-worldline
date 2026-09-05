@@ -307,6 +307,7 @@
         </div>
       </form>
       <div class="ai-chat-messages" data-chat-messages></div>
+      <div class="ai-chat-starhost" data-chat-starhost></div>
       <form class="ai-chat-composer">
         <textarea data-chat-input rows="1" placeholder="问点什么，比如：世界模型这条线是怎么演进的？"></textarea>
         <button class="ai-chat-send" type="submit" aria-label="发送">${icons.send}</button>
@@ -327,17 +328,25 @@
     contextChip.textContent = `当前页面：${describeView(getView())}`;
   }
 
-  // ---------- 边缘吸附与拖拽 ----------
+  // ---------- 边缘吸附与拖拽（支持左/右/上/下四边） ----------
   const DOCK_KEY = "ai-worldline-chat-dock";
+
+  function clampRatio(value) {
+    return Math.min(0.94, Math.max(0.06, value));
+  }
 
   function loadDock() {
     try {
       const saved = JSON.parse(localStorage.getItem(DOCK_KEY) || "null");
-      if (saved && (saved.side === "left" || saved.side === "right") && typeof saved.ratio === "number") {
-        return { side: saved.side, ratio: Math.min(0.92, Math.max(0.08, saved.ratio)) };
+      const edges = ["left", "right", "top", "bottom"];
+      if (saved && edges.includes(saved.edge) && typeof saved.ratio === "number") {
+        return { edge: saved.edge, ratio: clampRatio(saved.ratio) };
+      }
+      if (saved && edges.includes(saved.side) && typeof saved.ratio === "number") {
+        return { edge: saved.side, ratio: clampRatio(saved.ratio) };
       }
     } catch (error) { /* 隐私模式下使用默认位置 */ }
-    return { side: "right", ratio: 0.64 };
+    return { edge: "right", ratio: 0.64 };
   }
 
   let dock = loadDock();
@@ -348,17 +357,32 @@
   }
 
   function applyDock({ snap = false } = {}) {
-    root.classList.toggle("dock-left", dock.side === "left");
-    root.classList.toggle("dock-right", dock.side === "right");
-    const fabHeight = fab.offsetHeight || 54;
-    const top = Math.round(dock.ratio * window.innerHeight - fabHeight / 2);
-    fab.style.top = `${Math.min(window.innerHeight - fabHeight - 12, Math.max(12, top))}px`;
+    root.classList.toggle("dock-left", dock.edge === "left");
+    root.classList.toggle("dock-right", dock.edge === "right");
+    root.classList.toggle("dock-top", dock.edge === "top");
+    root.classList.toggle("dock-bottom", dock.edge === "bottom");
+    ["top", "left", "right", "bottom"].forEach((prop) => { fab.style[prop] = ""; });
+    const size = fab.offsetWidth || 54;
+    const pad = 20;
+    if (dock.edge === "left" || dock.edge === "right") {
+      const top = Math.min(window.innerHeight - size - 12, Math.max(12, dock.ratio * window.innerHeight - size / 2));
+      fab.style.top = `${Math.round(top)}px`;
+      fab.style[dock.edge] = `${pad}px`;
+    } else {
+      const left = Math.min(window.innerWidth - size - 12, Math.max(12, dock.ratio * window.innerWidth - size / 2));
+      fab.style.left = `${Math.round(left)}px`;
+      fab.style[dock.edge] = `${pad}px`;
+    }
     if (snap) {
       fab.classList.add("is-snapping");
       window.setTimeout(() => fab.classList.remove("is-snapping"), 380);
     }
-    const originX = dock.side === "left" ? "0%" : "100%";
-    const originY = dock.ratio <= 0.5 ? "top" : "bottom";
+    let originX;
+    let originY;
+    if (dock.edge === "left") { originX = "0%"; originY = dock.ratio <= 0.5 ? "top" : "bottom"; }
+    else if (dock.edge === "right") { originX = "100%"; originY = dock.ratio <= 0.5 ? "top" : "bottom"; }
+    else if (dock.edge === "top") { originY = "top"; originX = dock.ratio <= 0.5 ? "0%" : "100%"; }
+    else { originY = "bottom"; originX = dock.ratio <= 0.5 ? "0%" : "100%"; }
     panel.style.transformOrigin = window.innerWidth <= 760 ? "50% 100%" : `${originX} ${originY}`;
   }
 
@@ -388,12 +412,7 @@
     else open();
   }
 
-  fab.addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    dragState = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startTop: fab.getBoundingClientRect().top, moved: false };
-    try { fab.setPointerCapture(event.pointerId); } catch (error) { /* 合成事件或无真实指针时忽略 */ }
-  });
-  fab.addEventListener("pointermove", (event) => {
+  function onDragMove(event) {
     if (!dragState || event.pointerId !== dragState.pointerId) return;
     const deltaX = event.clientX - dragState.startX;
     const deltaY = event.clientY - dragState.startY;
@@ -402,30 +421,57 @@
       fab.classList.add("is-dragging");
     }
     if (!dragState.moved) return;
-    const fabHeight = fab.offsetHeight;
-    const nextTop = Math.min(window.innerHeight - fabHeight - 12, Math.max(12, dragState.startTop + deltaY));
-    fab.style.top = `${nextTop}px`;
-  });
-  fab.addEventListener("pointerup", (event) => {
+    const size = fab.offsetWidth || 54;
+    fab.style.left = `${Math.round(Math.min(window.innerWidth - size - 12, Math.max(12, dragState.rect.left + deltaX)))}px`;
+    fab.style.top = `${Math.round(Math.min(window.innerHeight - size - 12, Math.max(12, dragState.rect.top + deltaY)))}px`;
+    fab.style.right = "";
+    fab.style.bottom = "";
+  }
+
+  function endDragListeners() {
+    window.removeEventListener("pointermove", onDragMove, true);
+    window.removeEventListener("pointerup", onDragEnd, true);
+    window.removeEventListener("pointercancel", onDragCancel, true);
+  }
+
+  function onDragEnd(event) {
     if (!dragState || event.pointerId !== dragState.pointerId) return;
+    endDragListeners();
     const wasDrag = dragState.moved;
-    const endX = event.clientX;
-    const endY = event.clientY;
     fab.classList.remove("is-dragging");
     dragState = null;
     if (!wasDrag) {
       open();
       return;
     }
-    dock.side = endX < window.innerWidth / 2 ? "left" : "right";
-    dock.ratio = Math.min(0.92, Math.max(0.08, endY / window.innerHeight));
+    const distances = {
+      left: event.clientX,
+      right: window.innerWidth - event.clientX,
+      top: event.clientY,
+      bottom: window.innerHeight - event.clientY,
+    };
+    dock.edge = Object.keys(distances).reduce((a, b) => (distances[a] <= distances[b] ? a : b));
+    dock.ratio = clampRatio((dock.edge === "left" || dock.edge === "right")
+      ? event.clientY / window.innerHeight
+      : event.clientX / window.innerWidth);
     try { localStorage.setItem(DOCK_KEY, JSON.stringify(dock)); } catch (error) { /* 忽略持久化失败 */ }
     applyDock({ snap: true });
-  });
-  fab.addEventListener("pointercancel", () => {
+  }
+
+  function onDragCancel() {
+    endDragListeners();
     fab.classList.remove("is-dragging");
     dragState = null;
     applyDock({ snap: true });
+  }
+
+  fab.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    dragState = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, rect: fab.getBoundingClientRect(), moved: false };
+    window.addEventListener("pointermove", onDragMove, true);
+    window.addEventListener("pointerup", onDragEnd, true);
+    window.addEventListener("pointercancel", onDragCancel, true);
   });
   // 键盘激活（Enter/Space 触发的 click 没有 detail），避免与 pointerup 重复打开
   fab.addEventListener("click", (event) => { if (event.detail === 0) open(); });
@@ -474,6 +520,86 @@
   window.addEventListener("blur", hideContextMenu);
   window.addEventListener("resize", hideContextMenu);
   window.addEventListener("scroll", hideContextMenu, true);
+
+  // ---------- 星空：伽利略变形为 AI 画布 ----------
+  const star = () => window.AI_WORLDLINE_STARFIELD;
+  let starBusy = false;
+  let starChipsShown = false;
+  let starPrompted = false;
+
+  function wait(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function openStarPrompt() {
+    open();
+    if (starBusy || star()?.isBusy?.()) return;
+    if (!star()?.hasGraph?.() && !starChipsShown) {
+      starChipsShown = true;
+      appendStarChips();
+    }
+  }
+
+  function appendStarChips() {
+    const suggestions = star()?.getSuggestions?.() || [];
+    const bubble = appendMessage("assistant", "要出发去星空了 🌌 告诉我：你想让整条世界线围绕什么层次的概念或兴趣点展开？点一个方向，或者直接输入你自己的视角：");
+    const row = document.createElement("div");
+    row.className = "ai-chat-chips";
+    suggestions.forEach((label) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.textContent = label;
+      chip.addEventListener("click", () => startStar(label));
+      row.append(chip);
+    });
+    bubble.querySelector(".ai-chat-bubble").append(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function startStar(lens) {
+    const starApi = star();
+    if (starBusy || !starApi) return;
+    if (!isConfigured()) {
+      appendMessage("assistant", "还没有配置对话模型：点右上角 ⚙ 填好 API 后再来编织星空吧。");
+      return;
+    }
+    starBusy = true;
+    starChipsShown = false;
+    appendMessage("user", `围绕「${lens}」编织星空`);
+    panel.querySelectorAll(".ai-chat-chips button").forEach((chip) => { chip.disabled = true; });
+    try {
+      if (getView().route !== "starfield") {
+        window.location.hash = "starfield";
+        await wait(90);
+      }
+      const starHost = root.querySelector("[data-chat-starhost]");
+      panel.classList.add("is-fullscreen", "is-star");
+      starHost.innerHTML = `<div class="ai-chat-star-status" data-star-status>正在点亮星空…</div>`;
+      starApi.mount(starHost);
+      const result = await starApi.generate(lens, (message) => {
+        const el = starHost.querySelector("[data-star-status]");
+        if (el) el.textContent = message;
+      });
+      const done = starHost.querySelector("[data-star-status]");
+      if (done) done.textContent = `已点亮 ${result.nodeCount} 颗星 · ${result.edgeCount} 条连线，交还给星空画布…`;
+      await wait(1300);
+      const stage = document.querySelector("#starfield-stage");
+      if (stage) starApi.moveCanvasTo(stage);
+      exitStarMode();
+    } catch (error) {
+      exitStarMode();
+      appendMessage("assistant", `星空编织失败了：${error.message}`);
+    } finally {
+      starBusy = false;
+    }
+  }
+
+  function exitStarMode() {
+    panel.classList.remove("is-fullscreen", "is-star");
+    const starHost = root.querySelector("[data-chat-starhost]");
+    if (starHost) starHost.innerHTML = "";
+    close();
+  }
 
   function toggleSettings() {
     settingsForm.hidden = !settingsForm.hidden;
@@ -624,6 +750,16 @@
   });
   function onAppStateChange() {
     if (isOpen()) refreshContextChip();
+    const view = getView();
+    if (view.route !== "starfield") {
+      starPrompted = false;
+      return;
+    }
+    // 进入星空路由：若还没有图谱，伽利略自动展开询问兴趣视角
+    if (!isOpen() && !starBusy && !starPrompted && !star()?.hasGraph?.()) {
+      starPrompted = true;
+      openStarPrompt();
+    }
   }
   // 筛选等站内状态通过 history.pushState/replaceState 写入，不会触发 hashchange，
   // 在这里包装一层以便面板打开时实时更新「当前页面」提示。
@@ -654,5 +790,6 @@
     open,
     close: close,
     discuss,
+    openStarPrompt,
   };
 })();
