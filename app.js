@@ -15,6 +15,7 @@
     left: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>',
     file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6zM14 3.5v4h4M9 12h6M9 15.5h5"/></svg>',
     github: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4 .8-4-2-5-2.5M14.5 21v-3.2a2.8 2.8 0 0 0-.8-2.2c2.6-.3 5.3-1.3 5.3-5.8A4.5 4.5 0 0 0 17.8 6a4.2 4.2 0 0 0-.1-3.7S16.8 2 14.5 3.5a12 12 0 0 0-6 0C6.2 2 5.3 2.3 5.3 2.3A4.2 4.2 0 0 0 5.2 6 4.5 4.5 0 0 0 4 9.8c0 4.5 2.7 5.5 5.3 5.8a2.8 2.8 0 0 0-.8 2.2V21"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.9-3.1A8.5 8.5 0 1 1 21 11.5z"/></svg>',
     globe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.5 5.5 3.5 9S14.4 18.5 12 21c-2.4-2.5-3.5-5.5-3.5-9S9.6 5.5 12 3"/></svg>',
     target: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>',
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>',
@@ -151,6 +152,30 @@
     return data.events.find((event) => event.id === state.selectedId) || null;
   }
 
+  // 快照当前视图，供站内 AI 对话框（chat-widget.js）自动感知用户正在看的页面。
+  function getViewSnapshot() {
+    const selected = state.route === "timeline" ? getSelectedEvent() : null;
+    const laneLabels = { all: "事件＋技术", event: "事件", tech: "技术" };
+    const topicLabels = { all: "混合显示", "world-model": "世界模型", "not-world-model": "非世界模型" };
+    const routeLabels = { timeline: "时间线", sources: "文献库", about: "关于" };
+    return {
+      route: state.route,
+      routeLabel: routeLabels[state.route] || state.route,
+      lane: state.lane,
+      laneLabel: laneLabels[state.lane] || state.lane,
+      topic: state.topic,
+      topicLabel: topicLabels[state.topic] || state.topic,
+      searchQuery: state.query.trim(),
+      librarySearch: state.libraryQuery.trim(),
+      libraryType: state.libraryType,
+      selectedEventId: selected?.id || null,
+      selectedEventTitle: selected?.title || null,
+      detailDrawerOpen: state.drawerOpen,
+      url: window.location.href,
+    };
+  }
+  window.AI_WORLDLINE_GET_VIEW = getViewSnapshot;
+
   function eventHasTopic(event, topicId) {
     return Array.isArray(event.topics) && event.topics.includes(topicId);
   }
@@ -279,7 +304,7 @@
     if (!event) return `<div class="empty-selection"><strong>选择一个条目</strong><p>原始论文、官方发布和全文链接会在这里展开。</p></div>`;
     const lane = data.lanes[event.lane];
     const topics = topicLabels(event);
-    return `<div class="source-panel-inner"><div class="source-panel-head"><span>${escapeHTML([lane.label, ...topics].join(" · "))}</span></div><h2 class="selection-heading">${escapeHTML(event.title)}</h2><time class="selection-date">${escapeHTML(event.date || event.period)}</time><p class="selection-summary">${escapeHTML(event.what)}</p><div class="source-count">来源（${event.sources.length}）</div><div class="bibliography-list">${event.sources.map(renderBibliographyRow).join("")}</div><div class="source-panel-actions"><button class="source-detail-button" type="button" data-action="open-detail">查看完整条目 ${icons.right}</button><button class="source-link-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button></div></div>`;
+    return `<div class="source-panel-inner"><div class="source-panel-head"><span>${escapeHTML([lane.label, ...topics].join(" · "))}</span></div><h2 class="selection-heading">${escapeHTML(event.title)}</h2><time class="selection-date">${escapeHTML(event.date || event.period)}</time><p class="selection-summary">${escapeHTML(event.what)}</p><div class="source-count">来源（${event.sources.length}）</div><div class="bibliography-list">${event.sources.map(renderBibliographyRow).join("")}</div><div class="source-panel-actions"><button class="source-detail-button" type="button" data-action="open-detail">查看完整条目 ${icons.right}</button><button class="source-detail-button" type="button" data-action="ask-ai">${icons.chat}<span>问 AI</span></button><button class="source-link-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button></div></div>`;
   }
 
   function sourceIcon(source) {
@@ -298,7 +323,7 @@
   function renderDetailDrawer(event) {
     if (!event) return "";
     const topics = topicLabels(event);
-    return `<div class="detail-backdrop ${state.drawerOpen ? "is-open" : ""}" data-action="close-detail"></div><aside class="detail-drawer ${state.drawerOpen ? "is-open" : ""}" aria-hidden="${state.drawerOpen ? "false" : "true"}"><div class="drawer-handle" aria-hidden="true"></div><header class="detail-drawer-head"><div><span>${escapeHTML([data.lanes[event.lane].label, ...topics].join(" · "))}</span><h2>${escapeHTML(event.title)}</h2><time>${escapeHTML(event.date || event.period)}</time></div><div class="drawer-actions"><button class="icon-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button><button class="icon-button" type="button" data-action="close-detail" aria-label="关闭详情">${icons.close}</button></div></header><div class="detail-body">${renderDetailSection("发生了什么", event.what)}${renderDetailSection("为什么重要", event.why)}${renderDetailSection("它改变了什么", event.changed)}<section class="detail-section"><h3>相关概念</h3><div class="tag-list">${(event.concepts || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><section class="detail-section"><h3>相关机构</h3><div class="tag-list">${(event.orgs || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><div class="detail-source-title">原始来源</div><div class="bibliography-list detail-bibliography">${event.sources.map((source) => renderDetailSource(source, event)).join("")}</div></div></aside>`;
+    return `<div class="detail-backdrop ${state.drawerOpen ? "is-open" : ""}" data-action="close-detail"></div><aside class="detail-drawer ${state.drawerOpen ? "is-open" : ""}" aria-hidden="${state.drawerOpen ? "false" : "true"}"><div class="drawer-handle" aria-hidden="true"></div><header class="detail-drawer-head"><div><span>${escapeHTML([data.lanes[event.lane].label, ...topics].join(" · "))}</span><h2>${escapeHTML(event.title)}</h2><time>${escapeHTML(event.date || event.period)}</time></div><div class="drawer-actions"><button class="icon-button" type="button" data-action="copy-event-link" aria-label="复制条目链接">${icons.copy}</button><button class="icon-button" type="button" data-action="ask-ai" aria-label="问 AI">${icons.chat}</button><button class="icon-button" type="button" data-action="close-detail" aria-label="关闭详情">${icons.close}</button></div></header><div class="detail-body">${renderDetailSection("发生了什么", event.what)}${renderDetailSection("为什么重要", event.why)}${renderDetailSection("它改变了什么", event.changed)}<section class="detail-section"><h3>相关概念</h3><div class="tag-list">${(event.concepts || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><section class="detail-section"><h3>相关机构</h3><div class="tag-list">${(event.orgs || []).map((item) => `<span class="tag">${escapeHTML(item)}</span>`).join("")}</div></section><div class="detail-source-title">原始来源</div><div class="bibliography-list detail-bibliography">${event.sources.map((source) => renderDetailSource(source, event)).join("")}</div></div></aside>`;
   }
 
   function renderDetailSection(title, content) {
@@ -323,6 +348,7 @@
       if (action === "open-detail") { state.drawerOpen = true; state.timelineHasPosition = true; writeLocationState({ open: true }); renderTimeline(); }
       if (action === "close-detail") { state.drawerOpen = false; state.timelineHasPosition = true; writeLocationState({ open: false }); renderTimeline(); }
       if (action === "copy-event-link") copyEventLink();
+      if (action === "ask-ai") { const current = getSelectedEvent(); window.AI_WORLDLINE_CHAT?.open(current ? `请讲讲「${current.title}」：它发生了什么、为什么重要、改变了什么？` : ""); }
       if (action === "go-current") scrollToPeriod(data.meta.currentPeriod, true);
       if (action === "scroll-left") scrollTimelineBy(-620);
       if (action === "scroll-right") scrollTimelineBy(620);
