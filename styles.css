@@ -1710,3 +1710,15 @@ svg {
   .starfield-side { flex: 0 0 42%; border-left: 0; border-top: 1px solid rgba(150, 175, 255, 0.2); }
   .starfield-info { left: 12px; top: 76px; }
 }
+
+.starfield-wake {
+  width: 100%;
+  padding: 9px 0;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 10px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.3);
+  font-size: 13px;
+  cursor: pointer;
+}
+.starfield-wake:hover { background: rgba(27, 102, 227, 0.5); }

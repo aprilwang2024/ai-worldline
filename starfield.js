@@ -373,13 +373,16 @@
     }
   }
 
-  async function expandNode(nodeId, onStatus = () => {}, onDelta = null) {
+  async function expandNode(nodeId, handlers = {}) {
+    const { onStatus = () => {}, onDelta = () => {}, onNode = () => {}, onEdge = () => {} } = handlers;
     if (busy) throw new Error("伽利略正在展开另一片星域");
     const anchor = graph.nodes.get(nodeId);
     if (!anchor) throw new Error("找不到这颗星");
     if (expanded.has(nodeId)) return { added: 0 };
     if (!isConfigured()) throw new Error("还没有配置对话模型");
     busy = true;
+    const preNodeIds = new Set(graph.nodes.keys());
+    const preEdges = graph.edges.slice();
     try {
       onStatus(`伽利略正在展开「${anchor.label}」的周边星域…`);
       const neighborhood = graph.edges
@@ -408,29 +411,67 @@
         "【世界线条目索引】",
         eventIndexText(),
       ].filter(Boolean).join("\n");
+
+      // 流式：新星/新边一完成立即出现，与生成相同的逐点逐线体验
+      const parser = createStreamingGraphParser({
+        onNode(node) {
+          if (graph.nodes.has(node.id)) return;
+          const runtime = makeRuntimeNode(node, anchor);
+          graph.nodes.set(node.id, runtime);
+          engine.current?.addNode(runtime);
+          onNode(runtime);
+        },
+        onEdge(edge) {
+          const source = graph.nodes.get(edge.source);
+          const target = graph.nodes.get(edge.target);
+          if (!source || !target || edge.source === edge.target) return;
+          if (graph.edges.some((existing) => existing.source === edge.source && existing.target === edge.target)) return;
+          graph.edges.push(edge);
+          source.degree += 1;
+          target.degree += 1;
+          engine.current?.addEdge(edge);
+          onEdge(edge);
+        },
+      });
       const content = await callLLM([
         { role: "system", content: system },
         { role: "user", content: `请展开「${anchor.label}」。` },
-      ], { temperature: 0.7, onDelta: typeof onDelta === "function" ? onDelta : null });
-      const parsed = parseGraphPayload(content, new Set(graph.nodes.keys()));
-      const added = parsed.nodes.map((node) => {
-        const runtime = makeRuntimeNode(node, anchor);
-        graph.nodes.set(node.id, runtime);
-        engine.current?.addNode(runtime);
-        return runtime;
+      ], {
+        temperature: 0.7,
+        onDelta: (delta) => {
+          parser.feed(delta);
+          onDelta(delta);
+        },
       });
-      if (!added.length) throw new Error("模型没有产出新节点（可能与已有星点重复）");
-      const newEdges = parsed.edges.filter((edge) => graph.nodes.has(edge.source) && graph.nodes.has(edge.target));
-      newEdges.forEach((edge) => {
+
+      // 对账：丢弃增量阶段不被认可的节点/边（保留已落位坐标），度数全量重算
+      const parsed = parseGraphPayload(content, preNodeIds);
+      const validatedIds = new Set();
+      parsed.nodes.forEach((node) => {
+        validatedIds.add(node.id);
+        const existing = graph.nodes.get(node.id);
+        if (existing) {
+          Object.assign(existing, node);
+          return;
+        }
+        graph.nodes.set(node.id, makeRuntimeNode(node, anchor));
+      });
+      [...graph.nodes.keys()].forEach((id) => {
+        if (!preNodeIds.has(id) && !validatedIds.has(id)) graph.nodes.delete(id);
+      });
+      graph.edges = preEdges.concat(parsed.edges.filter((edge) => graph.nodes.has(edge.source) && graph.nodes.has(edge.target)));
+      graph.nodes.forEach((node) => { node.degree = 0; });
+      graph.edges.forEach((edge) => {
         graph.nodes.get(edge.source).degree += 1;
         graph.nodes.get(edge.target).degree += 1;
-        engine.current?.addEdge(edge);
       });
-      graph.edges = graph.edges.concat(newEdges);
+      const addedCount = [...graph.nodes.keys()].filter((id) => !preNodeIds.has(id)).length;
+      if (!addedCount) throw new Error("模型没有产出新节点（可能与已有星点重复）");
       expanded.add(nodeId);
       anchor.expanded = true;
+      rebuildRuntime();
       engine.current?.pulse();
-      return { added: added.length, edges: newEdges.length };
+      return { added: addedCount, edges: graph.edges.length - preEdges.length };
     } finally {
       busy = false;
     }
@@ -760,6 +801,7 @@
     },
     recordNarrative(next) { narrative = String(next || "").slice(0, 40000); },
     isBusy: () => busy,
+    isConfigured,
     isMounted: () => Boolean(mountedHost),
     onNodeSelect(handler) { nodeSelectHandler = typeof handler === "function" ? handler : null; },
     selectNode(nodeId) {

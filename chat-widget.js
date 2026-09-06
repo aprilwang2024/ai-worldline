@@ -670,6 +670,52 @@
   });
   function onAppStateChange() {
     if (isOpen()) refreshContextChip();
+    const view = getView();
+    if (view.route !== "starfield") {
+      starPrompted = false;
+      return;
+    }
+    // 进入星空路由：若还没有图谱，伽利略自动展开对话框询问兴趣视角
+    if (!isOpen() && !starfield()?.hasGraph?.() && !starfield()?.isBusy?.() && !starPrompted) {
+      starPrompted = true;
+      openStarPrompt();
+    }
+  }
+  // ---------- 星空：伽利略负责对话式询问兴趣视角，编织由星空页完成 ----------
+  const starfield = () => window.AI_WORLDLINE_STARFIELD;
+  let starPrompted = false;
+
+  function openStarPrompt() {
+    open();
+    if (starfield()?.isBusy?.()) return;
+    const lastChips = messagesEl.querySelector(".ai-chat-message:last-child .ai-chat-chips");
+    if (!lastChips) appendStarChips();
+  }
+
+  function appendStarChips() {
+    const suggestions = starfield()?.getSuggestions?.() || [];
+    const bubble = appendMessage("assistant", "要出发去星空了 🌌 告诉我：你想让整条世界线围绕什么层次的概念或兴趣点展开？点一个方向，我马上开始编织：");
+    const row = document.createElement("div");
+    row.className = "ai-chat-chips";
+    suggestions.forEach((label) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.textContent = label;
+      chip.addEventListener("click", () => {
+        if (starfield()?.isBusy?.()) return;
+        if (!isConfigured()) {
+          appendMessage("assistant", "还没有配置对话模型：点右上角 ⚙ 填好 API 后再来编织星空吧。");
+          return;
+        }
+        appendMessage("user", `围绕「${label}」编织星空`);
+        panel.querySelectorAll(".ai-chat-chips button").forEach((b) => { b.disabled = true; });
+        close();
+        window.AI_WORLDLINE_STARFIELD_PAGE?.requestWeave?.(label);
+      });
+      row.append(chip);
+    });
+    bubble.querySelector(".ai-chat-bubble").append(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
   }
   // 筛选等站内状态通过 history.pushState/replaceState 写入，不会触发 hashchange，
   // 在这里包装一层以便面板打开时实时更新「当前页面」提示。
@@ -700,5 +746,6 @@
     open,
     close: close,
     discuss,
+    openStarPrompt,
   };
 })();

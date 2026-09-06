@@ -283,7 +283,7 @@
       : "由伽利略重新编织的世界线知识图谱";
   }
 
-  // 侧栏状态机：问视角 → 编织直播 → 结果
+  // 侧栏状态机：等待指令（对话在伽利略面板） → 编织直播 → 结果
   function renderStarSide() {
     const side = document.querySelector("#starfield-side");
     const starfield = window.AI_WORLDLINE_STARFIELD;
@@ -291,35 +291,17 @@
     updateStarSubtitle();
     if (starWeaving) return;
     if (starfield.hasGraph()) renderStarSideDone(side, starfield);
-    else renderStarSideAsk(side);
+    else renderStarSideWaiting(side);
   }
 
-  function renderStarSideAsk(side, errorMessage = "") {
-    const starfield = window.AI_WORLDLINE_STARFIELD;
+  function renderStarSideWaiting(side, errorMessage = "") {
     side.innerHTML = `
       <header class="starfield-side-head"><span class="starfield-side-who">🪐 伽利略 · 编织台</span></header>
       <div class="starfield-side-body">
         ${errorMessage ? `<p class="starfield-side-error">${escapeHTML(errorMessage)}</p>` : ""}
-        <p class="starfield-side-note">把整条世界线交给我重新组织。你想围绕什么层次的概念或兴趣点展开？</p>
-        <div class="starfield-chips" data-star-chips></div>
-        <form class="starfield-ask-form" data-star-ask>
-          <input type="text" placeholder="或输入你自己的视角…" aria-label="自定义兴趣视角" />
-          <button type="submit">开始编织</button>
-        </form>
+        <p class="starfield-side-note">伽利略正在等待你的指令：在旁边的对话框里选择或说出兴趣视角，我就会把整条世界线编织成星空。</p>
+        <button class="starfield-wake" type="button" data-action="star-reask">唤醒伽利略对话框</button>
       </div>`;
-    const chips = side.querySelector("[data-star-chips]");
-    (starfield?.getSuggestions?.() || []).forEach((label) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.textContent = label;
-      chip.addEventListener("click", () => startStarWeave(label));
-      chips.append(chip);
-    });
-    side.querySelector("[data-star-ask]").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const lens = event.target.querySelector("input").value.trim();
-      if (lens) startStarWeave(lens);
-    });
   }
 
   function renderStarSideDone(side, starfield) {
@@ -373,11 +355,22 @@
       renderStarSideDone(side, starfield);
     } catch (error) {
       stopPhrases(`编织失败：${error.message}`);
-      renderStarSideAsk(side, `编织失败了：${error.message}`);
+      renderStarSideWaiting(side, `编织失败了：${error.message}`);
     } finally {
       starWeaving = false;
     }
   }
+
+  // 供伽利略对话框交接：切到星空路由并开始编织
+  window.AI_WORLDLINE_STARFIELD_PAGE = {
+    async requestWeave(lens) {
+      if (state.route !== "starfield") {
+        window.location.hash = "starfield";
+        await new Promise((resolve) => window.setTimeout(resolve, 90));
+      }
+      startStarWeave(lens);
+    },
+  };
 
   function handleStarNodeSelect(node) {
     selectedStarNodeId = node.id;
@@ -402,19 +395,32 @@
     if (!starfield || !selectedStarNodeId) return;
     statusEl.textContent = "伽利略正在编织…";
     let streamText = "";
+    let newStarCount = 0;
     try {
-      const result = await starfield.expandNode(selectedStarNodeId, (message) => { statusEl.textContent = message; }, (delta) => { streamText += delta; });
-      if (streamText) {
-        starfield.recordNarrative(`${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`);
-        const logEl = document.querySelector("[data-side-log]");
-        if (logEl) {
-          logEl.textContent = starfield.getNarrative();
-          logEl.scrollTop = logEl.scrollHeight;
-        }
-      }
+      const result = await starfield.expandNode(selectedStarNodeId, {
+        onStatus: (message) => { statusEl.textContent = message; },
+        onDelta: (delta) => {
+          streamText += delta;
+          const logEl = document.querySelector("[data-side-log]");
+          if (logEl) {
+            logEl.textContent = `${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`;
+            logEl.scrollTop = logEl.scrollHeight;
+          }
+        },
+        onNode: () => {
+          newStarCount += 1;
+          statusEl.textContent = `正在点亮新星，已到第 ${newStarCount} 颗…`;
+        },
+      });
+      if (streamText) starfield.recordNarrative(`${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`);
       statusEl.textContent = result.added ? `新增 ${result.added} 颗星，这片星域已展开。` : "这片星域已展开，点击相邻的星继续。";
       const button = document.querySelector("[data-action='star-expand']");
       if (button) { button.disabled = true; button.textContent = "已展开"; }
+      const logEl = document.querySelector("[data-side-log]");
+      if (logEl && streamText) {
+        logEl.textContent = `${starfield.getNarrative()}\n\n—— 展开一片星域 ——\n${streamText}`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
     } catch (error) {
       statusEl.textContent = `展开失败：${error.message}`;
     }
@@ -553,7 +559,7 @@
       if (action === "star-zoom-in") window.AI_WORLDLINE_STARFIELD?.zoomBy?.(1.3);
       if (action === "star-zoom-out") window.AI_WORLDLINE_STARFIELD?.zoomBy?.(0.78);
       if (action === "star-reset-view") window.AI_WORLDLINE_STARFIELD?.resetView?.();
-      if (action === "star-reask") { const side = document.querySelector("#starfield-side"); if (side) renderStarSideAsk(side); }
+      if (action === "star-reask") window.AI_WORLDLINE_CHAT?.openStarPrompt?.();
       if (action === "star-clear") {
         const starfield = window.AI_WORLDLINE_STARFIELD;
         if (starfield?.reset?.()) {
@@ -561,8 +567,9 @@
           const info = document.querySelector("#starfield-info");
           if (info) info.hidden = true;
           const side = document.querySelector("#starfield-side");
-          if (side) renderStarSideAsk(side);
+          if (side) renderStarSideWaiting(side);
           updateStarSubtitle();
+          window.AI_WORLDLINE_CHAT?.openStarPrompt?.();
         }
       }
       if (action === "star-expand") expandSelectedStar(document.querySelector("[data-star-status]"));
