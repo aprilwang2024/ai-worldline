@@ -307,7 +307,6 @@
         </div>
       </form>
       <div class="ai-chat-messages" data-chat-messages></div>
-      <div class="ai-chat-starhost" data-chat-starhost></div>
       <form class="ai-chat-composer">
         <textarea data-chat-input rows="1" placeholder="问点什么，比如：世界模型这条线是怎么演进的？"></textarea>
         <button class="ai-chat-send" type="submit" aria-label="发送">${icons.send}</button>
@@ -521,125 +520,6 @@
   window.addEventListener("resize", hideContextMenu);
   window.addEventListener("scroll", hideContextMenu, true);
 
-  // ---------- 星空：伽利略变形为 AI 画布 ----------
-  const star = () => window.AI_WORLDLINE_STARFIELD;
-  let starBusy = false;
-  let starChipsShown = false;
-  let starPrompted = false;
-
-  function wait(ms) {
-    return new Promise((resolve) => window.setTimeout(resolve, ms));
-  }
-
-  function openStarPrompt() {
-    open();
-    if (starBusy || star()?.isBusy?.()) return;
-    if (!star()?.hasGraph?.() && !starChipsShown) {
-      starChipsShown = true;
-      appendStarChips();
-    }
-  }
-
-  function appendStarChips() {
-    const suggestions = star()?.getSuggestions?.() || [];
-    const bubble = appendMessage("assistant", "要出发去星空了 🌌 告诉我：你想让整条世界线围绕什么层次的概念或兴趣点展开？点一个方向，或者直接输入你自己的视角：");
-    const row = document.createElement("div");
-    row.className = "ai-chat-chips";
-    suggestions.forEach((label) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.textContent = label;
-      chip.addEventListener("click", () => startStar(label));
-      row.append(chip);
-    });
-    bubble.querySelector(".ai-chat-bubble").append(row);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  const STAR_WAIT_PHRASES = [
-    "正在翻阅整条世界线…",
-    "正在挑选值得点亮的星座…",
-    "正在安排星点之间的星轨…",
-    "正在为星星写下注脚…",
-    "星光正在汇聚，请稍候…",
-  ];
-
-  async function startStar(lens) {
-    const starApi = star();
-    if (starBusy || !starApi) return;
-    if (!isConfigured()) {
-      appendMessage("assistant", "还没有配置对话模型：点右上角 ⚙ 填好 API 后再来编织星空吧。");
-      return;
-    }
-    starBusy = true;
-    starChipsShown = false;
-    appendMessage("user", `围绕「${lens}」编织星空`);
-    panel.querySelectorAll(".ai-chat-chips button").forEach((chip) => { chip.disabled = true; });
-    let phraseTimer = null;
-    try {
-      if (getView().route !== "starfield") {
-        window.location.hash = "starfield";
-        await wait(90);
-      }
-      const starHost = root.querySelector("[data-chat-starhost]");
-      panel.classList.add("is-fullscreen", "is-star");
-      starHost.innerHTML = `
-        <div class="ai-chat-star-layout">
-          <div class="ai-chat-star-canvas" data-star-canvas></div>
-          <aside class="ai-chat-star-side">
-            <header><span class="ai-chat-star-orbit" aria-hidden="true"><i></i><i></i><i></i></span><span data-star-status>正在点亮星空…</span></header>
-            <div class="ai-chat-star-log" data-star-log aria-label="模型输出"></div>
-          </aside>
-        </div>`;
-      starApi.mount(starHost.querySelector("[data-star-canvas]"));
-      const statusEl = starHost.querySelector("[data-star-status]");
-      const logEl = starHost.querySelector("[data-star-log]");
-      let phraseIndex = 0;
-      phraseTimer = window.setInterval(() => {
-        if (statusEl) statusEl.textContent = STAR_WAIT_PHRASES[phraseIndex % STAR_WAIT_PHRASES.length];
-        phraseIndex += 1;
-      }, 3200);
-
-      let narrativeText = "";
-      const stopPhrases = (message) => {
-        if (phraseTimer) { window.clearInterval(phraseTimer); phraseTimer = null; }
-        if (message && statusEl) statusEl.textContent = message;
-      };
-
-      const result = await starApi.generate(lens, {
-        onStatus: (message) => stopPhrases(message),
-        onDelta: (delta) => {
-          if (phraseTimer) stopPhrases("伽利略输出中，星点将逐一点亮…");
-          narrativeText += delta;
-          if (logEl) {
-            logEl.textContent = narrativeText;
-            logEl.scrollTop = logEl.scrollHeight;
-          }
-        },
-        onNode: () => stopPhrases(`正在逐点点亮，已到第 ${starApi.getNodeIds().length} 颗…`),
-        onEdge: () => { if (statusEl && !phraseTimer) statusEl.textContent = `正在牵引星轨，已有 ${starApi.getNodeIds().length} 星…`; },
-      });
-      starApi.recordNarrative(narrativeText);
-      stopPhrases(`完成：${result.nodeCount} 颗星 · ${result.edgeCount} 条连线，交还给星空画布…`);
-      await wait(1500);
-      const stage = document.querySelector("#starfield-stage");
-      if (stage) starApi.moveCanvasTo(stage);
-      exitStarMode();
-    } catch (error) {
-      exitStarMode();
-      appendMessage("assistant", `星空编织失败了：${error.message}`);
-    } finally {
-      if (phraseTimer) window.clearInterval(phraseTimer);
-      starBusy = false;
-    }
-  }
-
-  function exitStarMode() {
-    panel.classList.remove("is-fullscreen", "is-star");
-    const starHost = root.querySelector("[data-chat-starhost]");
-    if (starHost) starHost.innerHTML = "";
-    close();
-  }
 
   function toggleSettings() {
     settingsForm.hidden = !settingsForm.hidden;
@@ -790,16 +670,6 @@
   });
   function onAppStateChange() {
     if (isOpen()) refreshContextChip();
-    const view = getView();
-    if (view.route !== "starfield") {
-      starPrompted = false;
-      return;
-    }
-    // 进入星空路由：若还没有图谱，伽利略自动展开询问兴趣视角
-    if (!isOpen() && !starBusy && !starPrompted && !star()?.hasGraph?.()) {
-      starPrompted = true;
-      openStarPrompt();
-    }
   }
   // 筛选等站内状态通过 history.pushState/replaceState 写入，不会触发 hashchange，
   // 在这里包装一层以便面板打开时实时更新「当前页面」提示。
@@ -830,6 +700,5 @@
     open,
     close: close,
     discuss,
-    openStarPrompt,
   };
 })();

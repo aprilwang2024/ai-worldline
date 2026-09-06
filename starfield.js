@@ -747,6 +747,17 @@
     getLens: () => graph.lens,
     getNodeIds: () => [...graph.nodes.keys()],
     getNarrative: () => narrative,
+    reset() {
+      if (busy) return false;
+      graph.lens = "";
+      graph.nodes.clear();
+      graph.edges = [];
+      expanded.clear();
+      narrative = "";
+      rebuildRuntime();
+      engine.current?.resetView?.();
+      return true;
+    },
     recordNarrative(next) { narrative = String(next || "").slice(0, 40000); },
     isBusy: () => busy,
     isMounted: () => Boolean(mountedHost),
