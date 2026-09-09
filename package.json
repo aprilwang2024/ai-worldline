@@ -1,14 +1,18 @@
 {
   "name": "ai-worldline",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "A source-first timeline of foundation models, agents, and world models.",
   "private": true,
   "type": "module",
   "scripts": {
     "build:data": "node scripts/build-data.mjs",
     "validate": "node scripts/validate-data.mjs",
-    "check": "node --check app.js && node --check timeline-data.js",
-    "test": "npm run validate && npm run build:data && npm run check"
+    "check": "node --check app.js && node --check timeline-data.js && node --check chat-config.js && node --check chat-widget.js && node --check starfield.js && node scripts/check-scripts.mjs",
+    "test": "npm run validate && npm run build:data && npm run check && node --test tests/*.test.mjs",
+    "collect": "NODE_USE_ENV_PROXY=1 node scripts/collect-sources.mjs",
+    "dedupe": "node scripts/dedupe-candidates.mjs",
+    "draft": "NODE_USE_ENV_PROXY=1 node scripts/draft-candidates.mjs",
+    "preview": "node scripts/dev-chat-proxy.mjs"
   },
   "engines": {
     "node": ">=18"

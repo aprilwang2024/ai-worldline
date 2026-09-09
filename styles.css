@@ -1117,3 +1117,616 @@ svg {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---------- 伽利略 · AI 助手（chat-widget.js） ---------- */
+
+@keyframes ai-chat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes ai-chat-blink {
+  0%, 91%, 97%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.12); }
+}
+@keyframes ai-chat-squash {
+  0% { transform: scale(1, 1); }
+  40% { transform: scale(1.14, 0.86); }
+  70% { transform: scale(0.94, 1.08); }
+  100% { transform: scale(1, 1); }
+}
+
+/* 吸附按钮：可拖动，松手后吸附到最近边缘 */
+.ai-chat-fab {
+  position: fixed;
+  top: 60%;
+  right: 20px;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 10px 26px rgba(12, 24, 45, 0.18);
+  cursor: grab;
+  touch-action: none;
+  animation: ai-chat-float 3.8s ease-in-out infinite;
+  transition: top 0.38s cubic-bezier(0.25, 1.45, 0.4, 1), transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s ease;
+}
+.dock-left .ai-chat-fab { left: 20px; right: auto; }
+.ai-chat-fab:hover { box-shadow: 0 14px 34px rgba(12, 24, 45, 0.24); }
+.ai-chat-fab:focus-visible { outline-offset: 4px; }
+.ai-chat-fab.is-dragging {
+  cursor: grabbing;
+  z-index: 95;
+  animation: none;
+  transform: scale(1.12);
+  box-shadow: var(--shadow-float);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ai-chat-fab.is-snapping .ai-chat-face { animation: ai-chat-squash 0.38s ease; }
+.ai-chat-fab.is-hidden { opacity: 0; transform: scale(0.4); pointer-events: none; animation: none; }
+
+.ai-chat-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.18s ease;
+}
+.ai-chat-fab:hover .ai-chat-face { transform: scale(1.07) rotate(-3deg); }
+.ai-chat-face svg { display: block; width: 100%; height: 100%; }
+.ai-chat-face-body { fill: var(--cobalt); }
+.ai-chat-fab:hover .ai-chat-face-body { fill: var(--cobalt-bright); }
+.ai-chat-eyes circle { fill: var(--white); transform-box: fill-box; transform-origin: center; animation: ai-chat-blink 4.4s infinite; }
+.ai-chat-eyes circle:last-child { animation-delay: 0.08s; }
+.ai-chat-smile { fill: none; stroke: var(--white); stroke-width: 2.4; stroke-linecap: round; }
+
+/* 对话框：从按钮所在方位展开 */
+.ai-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 32px));
+  height: min(600px, calc(100vh - 60px));
+  border: 1px solid var(--rule-strong);
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.72) translateY(18px);
+  transition: transform 0.3s cubic-bezier(0.22, 1.35, 0.32, 1), opacity 0.2s ease, visibility 0s linear 0.3s;
+}
+.dock-left .ai-chat-panel { left: 24px; right: auto; }
+.ai-chat-panel.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: transform 0.36s cubic-bezier(0.22, 1.35, 0.32, 1), opacity 0.22s ease;
+}
+
+.ai-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 12px 10px 12px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+.ai-chat-title { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 650; }
+.ai-chat-title svg { width: 17px; height: 17px; color: var(--cobalt); }
+.ai-chat-head-actions { display: flex; align-items: center; gap: 2px; }
+.ai-chat-icon-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ai-chat-icon-button svg { width: 15px; height: 15px; }
+.ai-chat-icon-button:hover { color: var(--ink); background: var(--cobalt-soft); }
+
+.ai-chat-context {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--white);
+}
+.ai-chat-context-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-size: 11.5px;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chat-settings {
+  display: grid;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-blue);
+}
+.ai-chat-settings[hidden] { display: none; }
+.ai-chat-settings label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+.ai-chat-settings input {
+  padding: 7px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 13px;
+}
+.ai-chat-settings input:focus-visible { outline-offset: 0; }
+.ai-chat-settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ai-chat-settings-note { font-size: 11px; color: var(--muted); }
+.ai-chat-models-result { margin: 0; max-height: 100px; overflow-y: auto; overflow-wrap: anywhere; font-size: 11px; color: var(--ink-soft); }
+.ai-chat-lens-form { display: flex; gap: 8px; margin-top: 12px; }
+.ai-chat-lens-form input { flex: 1; min-width: 0; padding: 8px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--white); color: var(--ink); font-size: 12px; }
+.ai-chat-lens-form button { flex: none; padding: 8px 12px; border-radius: 8px; background: var(--cobalt); color: var(--white); cursor: pointer; }
+.ai-chat-save {
+  padding: 7px 16px;
+  border-radius: 8px;
+  color: var(--white);
+  background: var(--cobalt);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ai-chat-save:hover { background: var(--cobalt-bright); }
+
+.ai-chat-messages {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--white);
+}
+.ai-chat-message { display: flex; }
+.ai-chat-message.is-user { justify-content: flex-end; }
+.ai-chat-message.is-assistant { justify-content: flex-start; }
+.ai-chat-bubble {
+  max-width: 86%;
+  padding: 9px 13px;
+  border-radius: 13px;
+  font-size: 13.5px;
+  line-height: 1.62;
+  overflow-wrap: break-word;
+}
+.ai-chat-message.is-user .ai-chat-bubble { color: var(--ink); background: var(--cobalt-soft); border: 1px solid #d4e2fb; border-bottom-right-radius: 4px; }
+.ai-chat-message.is-assistant .ai-chat-bubble { color: var(--ink-soft); background: var(--surface); border: 1px solid var(--rule); border-bottom-left-radius: 4px; }
+.ai-chat-bubble p { margin: 0 0 8px; }
+.ai-chat-bubble p:last-child { margin-bottom: 0; }
+.ai-chat-bubble ul, .ai-chat-bubble ol { margin: 0 0 8px; padding-left: 20px; }
+.ai-chat-bubble ul:last-child, .ai-chat-bubble ol:last-child { margin-bottom: 0; }
+.ai-chat-bubble h4 { margin: 2px 0 6px; font-size: 13.5px; }
+.ai-chat-bubble a { color: var(--cobalt); text-underline-offset: 2px; }
+.ai-chat-bubble code {
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ai-chat-typing { color: var(--muted); font-size: 12.5px; }
+.ai-chat-error { color: var(--danger); font-size: 12.5px; }
+
+.ai-chat-composer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 11px 13px;
+  border-top: 1px solid var(--rule);
+  background: var(--white);
+}
+.ai-chat-composer textarea {
+  flex: 1 1 auto;
+  max-height: 132px;
+  padding: 8px 11px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13.5px;
+  line-height: 1.5;
+  resize: none;
+}
+.ai-chat-composer textarea:focus { outline: none; border-color: var(--cobalt); background: var(--white); }
+.ai-chat-send {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--white);
+  background: var(--cobalt);
+  cursor: pointer;
+}
+.ai-chat-send svg { width: 17px; height: 17px; }
+.ai-chat-send:hover { background: var(--cobalt-bright); }
+
+.ai-chat-foot {
+  flex: 0 0 auto;
+  padding: 7px 16px 9px;
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10.5px;
+  text-align: center;
+}
+
+/* 选中文字后的右键菜单 */
+.ai-chat-context-menu {
+  position: fixed;
+  z-index: 110;
+  min-width: 236px;
+  padding: 5px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 14px 40px rgba(12, 24, 45, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.92) translateY(-4px);
+  transform-origin: 0 0;
+  transition: opacity 0.14s ease, transform 0.16s cubic-bezier(0.2, 1.3, 0.4, 1), visibility 0s linear 0.16s;
+}
+.ai-chat-context-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity 0.12s ease, transform 0.16s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.ai-chat-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.ai-chat-context-menu button:hover { color: var(--cobalt); background: var(--cobalt-soft); }
+.ai-chat-context-menu svg { width: 15px; height: 15px; }
+
+@media (max-width: 760px) {
+  .ai-chat-fab { width: 48px; height: 48px; }
+  .ai-chat-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    height: min(72vh, 560px);
+    transform: scale(0.8) translateY(24px);
+    transform-origin: 50% 100%;
+  }
+}
+
+/* ---------- 全站文本可选择（时间线条目等原为按钮，浏览器默认禁选） ---------- */
+
+#app { user-select: text; -webkit-user-select: text; }
+.ai-chat-fab, .ai-chat-face, .ai-chat-context-menu { user-select: none; -webkit-user-select: none; }
+
+/* ---------- 伽利略 · 四边吸附与星空变形补充 ---------- */
+
+.dock-top .ai-chat-panel { top: 24px; bottom: auto; left: auto; right: 24px; }
+.dock-bottom .ai-chat-panel { top: auto; }
+
+/* 兴趣视角建议 chips */
+.ai-chat-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.ai-chat-chips button {
+  padding: 6px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.ai-chat-chips button:hover { color: var(--cobalt); border-color: var(--cobalt); background: var(--cobalt-soft); }
+.ai-chat-chips button:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- 星空路由（AI 知识图谱画布） ---------- */
+
+.starfield-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: #dfe7ff;
+  background: radial-gradient(120% 100% at 50% 0%, #101a33 0%, #070b18 58%, #04060f 100%);
+}
+.starfield-stage { position: relative; flex: 1 1 auto; overflow: hidden; }
+.starfield-canvas-wrap { position: absolute; inset: 0; }
+.starfield-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.starfield-canvas.is-panning { cursor: grabbing; }
+
+.starfield-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 28px 0;
+  pointer-events: none;
+}
+.starfield-head h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: 0.12em;
+  color: #f2f5ff;
+}
+.starfield-head p { margin: 6px 0 0; color: rgba(200, 214, 255, 0.66); font-size: 12.5px; letter-spacing: 0.05em; }
+.starfield-tools { display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto; }
+.starfield-tool {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 7px 14px;
+  border: 1px solid rgba(150, 175, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(220, 230, 255, 0.9);
+  background: rgba(12, 20, 42, 0.55);
+  font-size: 12.5px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.starfield-tool:hover { border-color: rgba(160, 190, 255, 0.6); color: #fff; }
+.starfield-empty {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  text-align: center;
+  color: rgba(200, 214, 255, 0.75);
+  font-size: 13.5px;
+}
+.starfield-empty button {
+  padding: 10px 22px;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 999px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.35);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.starfield-empty button:hover { background: rgba(27, 102, 227, 0.55); }
+
+.starfield-info {
+  position: absolute;
+  right: 20px;
+  top: 92px;
+  z-index: 6;
+  width: min(320px, calc(100vw - 40px));
+  max-height: calc(100% - 130px);
+  overflow-y: auto;
+  padding: 16px 18px;
+  border: 1px solid rgba(150, 175, 255, 0.24);
+  border-radius: 14px;
+  background: rgba(10, 16, 34, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+.starfield-info h3 { margin: 0 0 4px; font-size: 16.5px; color: #f2f5ff; }
+.starfield-kind {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(120, 160, 255, 0.16);
+  color: #a8c2ff;
+  font-size: 11px;
+}
+.starfield-info p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: rgba(214, 226, 255, 0.85); }
+.starfield-links { display: grid; gap: 6px; margin-bottom: 10px; }
+.starfield-links a { color: #9fc2ff; font-size: 12.5px; text-underline-offset: 3px; }
+.starfield-links a span { color: rgba(200, 214, 255, 0.5); font-size: 11px; margin-left: 6px; }
+.starfield-expand-status { min-height: 16px; margin-bottom: 8px; color: #a8c2ff; font-size: 12px; }
+.starfield-expand {
+  width: 100%;
+  padding: 9px 0;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 10px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.3);
+  font-size: 13px;
+  cursor: pointer;
+}
+.starfield-expand:hover { background: rgba(27, 102, 227, 0.5); }
+.starfield-expand:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 760px) {
+  .ai-chat-panel.is-fullscreen { left: 0; top: 0; width: 100vw; height: 100vh; border-radius: 0; }
+  .starfield-head { padding: 14px 16px 0; }
+  .starfield-head h1 { font-size: 22px; }
+  .starfield-info { right: 12px; top: 76px; }
+}
+
+.ai-chat-star-orbit { position: relative; display: inline-block; width: 14px; height: 14px; }
+.ai-chat-star-orbit i {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #9fc2ff;
+  box-shadow: 0 0 6px rgba(159, 194, 255, 0.9);
+  animation: ai-chat-orbit 1.3s linear infinite;
+}
+.ai-chat-star-orbit i:nth-child(2) { animation-delay: 0.43s; }
+.ai-chat-star-orbit i:nth-child(3) { animation-delay: 0.86s; }
+@keyframes ai-chat-orbit {
+  from { transform: rotate(0deg) translateX(6px); }
+  to { transform: rotate(360deg) translateX(6px); }
+}
+
+
+/* ---------- 星空：页内编织台侧栏 ---------- */
+
+.starfield-body {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+.starfield-main {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.starfield-screen .starfield-head {
+  position: relative;
+  padding-bottom: 16px;
+  z-index: 5;
+}
+.starfield-side {
+  position: relative;
+  flex: 0 0 clamp(300px, 26vw, 380px);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(150, 175, 255, 0.2);
+  background: rgba(8, 12, 26, 0.92);
+  min-height: 0;
+}
+.starfield-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(150, 175, 255, 0.16);
+  color: #a8c2ff;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.starfield-side-who { font-weight: 600; }
+.starfield-side-actions { display: flex; gap: 6px; }
+.starfield-side-actions button {
+  padding: 4px 10px;
+  border: 1px solid rgba(150, 175, 255, 0.3);
+  border-radius: 999px;
+  color: rgba(220, 230, 255, 0.88);
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+.starfield-side-actions button:hover { border-color: rgba(170, 200, 255, 0.65); color: #fff; }
+.starfield-side-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 16px 20px;
+}
+.starfield-side-note { margin: 0 0 12px; color: rgba(214, 226, 255, 0.85); font-size: 13px; line-height: 1.7; }
+.starfield-side-error {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 1px solid rgba(220, 140, 150, 0.4);
+  border-radius: 10px;
+  color: #f0b9c0;
+  background: rgba(120, 40, 55, 0.25);
+  font-size: 12.5px;
+}
+.starfield-side .starfield-chips { margin-bottom: 14px; }
+.starfield-side .starfield-chips button {
+  border-color: rgba(150, 175, 255, 0.35);
+  background: rgba(19, 95, 209, 0.16);
+  color: #d6e2ff;
+}
+.starfield-side .starfield-chips button:hover { border-color: rgba(170, 200, 255, 0.7); background: rgba(27, 102, 227, 0.35); color: #fff; }
+.starfield-ask-form { display: flex; gap: 8px; }
+.starfield-ask-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(150, 175, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef2ff;
+  font-size: 13px;
+}
+.starfield-ask-form input::placeholder { color: rgba(190, 208, 255, 0.45); }
+.starfield-ask-form input:focus { outline: none; border-color: rgba(170, 200, 255, 0.7); }
+.starfield-ask-form button {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--white);
+  background: var(--cobalt);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.starfield-ask-form button:hover { background: var(--cobalt-bright); }
+.starfield-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: rgba(190, 208, 255, 0.78);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.75;
+}
+
+/* 信息卡移到画布左侧，避让右侧编织台 */
+.starfield-info { left: 20px; right: auto; }
+
+@media (max-width: 760px) {
+  .starfield-body { flex-direction: column; }
+  .starfield-side { flex: 0 0 42%; border-left: 0; border-top: 1px solid rgba(150, 175, 255, 0.2); }
+  .starfield-info { left: 12px; top: 76px; }
+}
+
+.starfield-wake {
+  width: 100%;
+  padding: 9px 0;
+  border: 1px solid rgba(150, 175, 255, 0.4);
+  border-radius: 10px;
+  color: #eef2ff;
+  background: rgba(19, 95, 209, 0.3);
+  font-size: 13px;
+  cursor: pointer;
+}
+.starfield-wake:hover { background: rgba(27, 102, 227, 0.5); }

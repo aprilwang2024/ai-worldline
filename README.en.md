@@ -38,6 +38,17 @@ Then open `http://127.0.0.1:8808/`.
 
 You can also open `index.html` directly. Node.js is only required when changing the canonical dataset.
 
+## Ask AI
+
+The in-site assistant "**伽利略** (Galileo)" lives in a draggable round button that snaps to any page edge (position is remembered) and unfolds into a chat panel with a smooth animation. It answers questions using the timeline entry index and current entry content (not the full text of every linked source) plus the page you are currently viewing (route, active slice, selected entry). Select any text on the page, right-click and choose "让伽利略讨论这段内容" to send the passage to the assistant; the entry's source panel offers a one-click shortcut as well. It talks to any OpenAI-compatible Chat Completions endpoint:
+
+The **星空 (Starfield)** tab is Galileo's AI canvas: entering the page auto-opens Galileo's dialog to pick an interest lens (e.g. "模型参数", "算力基础设施演进", "AI 研究者们的爱恨情仇") or enter a custom lens; the starfield page then weaves the timeline live — stars light up one by one and edges are drawn progressively beside the streaming model output. Clicking any star expands its neighbourhood the same way, star by star. Relationships are AI interpretations and should be checked against the linked sources. Generation uses your chat model unless `starModel` in `chat-config.js` is configured.
+
+- **Local preview with a real model**: `CHAT_API_KEY=your-key npm run preview`, then open `http://127.0.0.1:8808/` — the preview server ships a same-origin proxy, so the key stays in the local process and never reaches the browser or the repository (defaults to Zhipu `glm-5`; override with `CHAT_MODEL` / `CHAT_UPSTREAM`);
+- **Site maintainers** can preset `endpoint` and `model` in [`chat-config.js`](./chat-config.js) (shared keys must stay on a private proxy server, never in public static files), or **visitors** can enter their own credentials via the ⚙ panel — settings stay in the visitor's browser and requests go directly to the configured endpoint. The model lookup button lists models returned by that endpoint.
+
+The scheduled update pipeline (collect → dedupe and rank → LLM draft → human-reviewed draft PRs) runs daily at 02:00 UTC. Without the repository secret `LLM_API_KEY`, it collects sources and skips drafting. Drafts require human review before merging; see [`docs/auto-update-roadmap.md`](./docs/auto-update-roadmap.md) and `npm run collect` / `npm run dedupe` / `npm run draft`.
+
 ## Contribute an event
 
 The canonical archive lives in [`data/timeline.json`](./data/timeline.json), not in the generated JavaScript bundle.
@@ -60,7 +71,10 @@ data/schema.json         JSON Schema for editors
 scripts/                 validation and data generation
 timeline-data.js         generated browser-compatible bundle
 app.js                   filters, search, permalinks, and details
+chat-config.js           endpoint and model config for the in-site AI chat
+chat-widget.js           in-site AI chat widget
 styles.css               visual system and responsive layout
+docs/                    planning and design documents
 .github/                 CI, Pages deployment, and contribution forms
 ```
 

@@ -1,0 +1,106 @@
+{
+  "limitPerRun": 10,
+  "keywords": [
+    "world model",
+    "world models",
+    "world simulation",
+    "agent",
+    "agentic",
+    "foundation model",
+    "multimodal",
+    "embodied",
+    "reinforcement learning",
+    "video generation",
+    "interactive generation",
+    "scaling law",
+    "moe",
+    "long context",
+    "open weights",
+    "open-source"
+  ],
+  "majorOrgs": [
+    "openai",
+    "anthropic",
+    "google",
+    "deepmind",
+    "meta",
+    "qwen",
+    "alibaba",
+    "deepseek",
+    "moonshot",
+    "kimi",
+    "zhipu",
+    "z.ai",
+    "tencent",
+    "bytedance",
+    "nvidia",
+    "mistral",
+    "xai",
+    "microsoft",
+    "hugging face",
+    "huggingface",
+    "world labs",
+    "wayve",
+    "genie",
+    "li jie",
+    "fei-fei li"
+  ],
+  "feeds": [
+    {
+      "id": "arxiv-world-models",
+      "type": "arxiv",
+      "query": "all:\"world model\" OR all:\"world models\"",
+      "lane": "tech",
+      "topics": ["world-model"],
+      "weight": 1,
+      "maxResults": 25
+    },
+    {
+      "id": "arxiv-language-agents",
+      "type": "arxiv",
+      "query": "cat:cs.CL AND (all:\"language agent\" OR all:\"LLM agent\" OR all:\"agentic\")",
+      "lane": "tech",
+      "weight": 0.7,
+      "maxResults": 20
+    },
+    {
+      "id": "hf-daily-papers",
+      "type": "hf-daily-papers",
+      "url": "https://huggingface.co/api/daily_papers",
+      "lane": "tech",
+      "weight": 0.6
+    },
+    {
+      "id": "openai-news",
+      "type": "rss",
+      "url": "https://openai.com/news/rss.xml",
+      "lane": "event",
+      "org": "OpenAI",
+      "weight": 0.9
+    },
+    {
+      "id": "deepmind-blog",
+      "type": "rss",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "lane": "event",
+      "org": "Google DeepMind",
+      "weight": 0.9
+    },
+    {
+      "id": "hf-blog",
+      "type": "rss",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "lane": "tech",
+      "org": "Hugging Face",
+      "weight": 0.5
+    },
+    {
+      "id": "qwen-releases",
+      "type": "github-releases",
+      "repo": "QwenLM/Qwen3",
+      "lane": "tech",
+      "org": "Qwen",
+      "weight": 0.8
+    }
+  ]
+}
