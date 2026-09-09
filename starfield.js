@@ -16,7 +16,7 @@
   if (!data) return;
 
   const STORAGE_KEY = "ai-worldline-chat-settings";
-  const SUGGESTIONS = ["模型参数", "模型结构", "训练数据量", "算力基础设施演进", "开源与地缘竞争", "AI 研究者们的爱恨情仇"];
+  const SUGGESTIONS = ["模型参数", "模型结构", "训练数据量", "算力基础设施演进", "开源与地缘竞争", "研究者与思想传承"];
   const KINDS = new Set(["concept", "org", "event", "era"]);
   const KIND_COLORS = { concept: "#9fc2ff", org: "#ffd28a", event: "#8af0c8", era: "#e0a6ff" };
   const KIND_LABELS = { concept: "概念", org: "机构", event: "事件", era: "时期" };
@@ -785,6 +785,7 @@
     hasGraph: () => graph.nodes.size > 0,
     getLens: () => graph.lens,
     getNodeIds: () => [...graph.nodes.keys()],
+    getNodeSummaries: () => [...graph.nodes.values()].map(({ id, label, summary }) => ({ id, label, summary })),
     getNarrative: () => narrative,
     reset() {
       if (busy) return false;

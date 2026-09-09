@@ -225,13 +225,6 @@
 
   let selectedStarNodeId = null;
   let starWeaving = false;
-  const STAR_WAIT_PHRASES = [
-    "正在翻阅整条世界线…",
-    "正在挑选值得点亮的星座…",
-    "正在安排星点之间的星轨…",
-    "正在为星星写下注脚…",
-    "星光正在汇聚，请稍候…",
-  ];
 
   function render() {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.route === state.route));
@@ -260,7 +253,7 @@
           <div class="starfield-stage" id="starfield-stage"></div>
           <aside class="starfield-info" id="starfield-info" hidden></aside>
         </div>
-        <aside class="starfield-side" id="starfield-side" aria-label="伽利略编织台"></aside>
+        <aside class="starfield-side" id="starfield-side" aria-label="星空探索"></aside>
       </div>
     </section>`;
     const stage = document.querySelector("#starfield-stage");
@@ -280,7 +273,7 @@
     if (!el || !starfield) return;
     el.textContent = starfield.hasGraph()
       ? `镜头「${starfield.getLens()}」 · ${starfield.getNodeIds().length} 颗星 · 点击星点，伽利略会持续向外展开`
-      : "由伽利略重新编织的世界线知识图谱";
+      : "从一个研究视角，探索条目之间的关联";
   }
 
   // 侧栏状态机：等待指令（对话在伽利略面板） → 编织直播 → 结果
@@ -296,16 +289,19 @@
 
   function renderStarSideWaiting(side, errorMessage = "") {
     side.innerHTML = `
-      <header class="starfield-side-head"><span class="starfield-side-who">🪐 伽利略 · 编织台</span></header>
+      <header class="starfield-side-head"><span class="starfield-side-who">探索视角</span></header>
       <div class="starfield-side-body">
         ${errorMessage ? `<p class="starfield-side-error">${escapeHTML(errorMessage)}</p>` : ""}
-        <p class="starfield-side-note">伽利略正在等待你的指令：在旁边的对话框里选择或说出兴趣视角，我就会把整条世界线编织成星空。</p>
-        <button class="starfield-wake" type="button" data-action="star-reask">唤醒伽利略对话框</button>
+        <h2 class="starfield-side-title">换个角度<br>读世界线。</h2><p class="starfield-side-note">选择一个研究主题，让世界线中的概念、机构与事件在星空中相遇。</p>
+        <button class="starfield-wake" type="button" data-action="star-reask">选择探索视角</button>
       </div>`;
     bindStarSideActions(side);
   }
 
   function bindStarSideActions(side) {
+    side.querySelectorAll("[data-star-node]").forEach((button) => {
+      button.addEventListener("click", () => window.AI_WORLDLINE_STARFIELD?.selectNode(button.dataset.starNode));
+    });
     side.querySelectorAll("[data-action]").forEach((button) => {
       button.addEventListener("click", () => {
         document.querySelector(`.starfield-tools [data-action='${button.dataset.action}']`)?.click();
@@ -322,7 +318,11 @@
           <button type="button" data-action="star-clear">清空</button>
         </span>
       </header>
-      <div class="starfield-log" data-side-log>${escapeHTML(starfield.getNarrative() || "（本次没有留档模型输出）")}</div>`;
+      <div class="starfield-side-body">
+        <p class="starfield-side-note">选择一个节点，查看它的说明与原始条目，也可以继续展开相邻研究。</p>
+        <div class="starfield-node-list">${starfield.getNodeSummaries().map((node) => `<button type="button" class="starfield-node-item" data-star-node="${escapeAttr(node.id)}"><strong>${escapeHTML(node.label)}</strong><span>${escapeHTML(node.summary)}</span></button>`).join("")}</div>
+        <p class="starfield-source-note">关联由 AI 生成。重要判断请回到条目的原始来源核对。</p>
+      </div>`;
     bindStarSideActions(side);
   }
 
@@ -332,39 +332,26 @@
     starWeaving = true;
     const side = document.querySelector("#starfield-side");
     side.innerHTML = `
-      <header class="starfield-side-head"><span class="ai-chat-star-orbit" aria-hidden="true"><i></i><i></i><i></i></span><span data-side-status>正在点亮星空…</span></header>
-      <div class="starfield-log" data-side-log></div>`;
+      <header class="starfield-side-head"><span class="starfield-side-who">正在探索</span></header>
+      <div class="starfield-side-body" role="status" aria-live="polite">
+        <h2 class="starfield-side-title">${escapeHTML(lens)}</h2>
+        <p class="starfield-side-note" data-side-status>正在读取世界线条目…</p>
+        <p class="starfield-source-note">节点与连线会陆续出现。完成后，可从这里继续阅读。</p>
+      </div>`;
     const statusEl = side.querySelector("[data-side-status]");
-    const logEl = side.querySelector("[data-side-log]");
     document.querySelector("#starfield-info").hidden = true;
-    let phraseIndex = 0;
-    let phraseTimer = window.setInterval(() => {
-      statusEl.textContent = STAR_WAIT_PHRASES[phraseIndex % STAR_WAIT_PHRASES.length];
-      phraseIndex += 1;
-    }, 3200);
-    let narrativeText = "";
-    const stopPhrases = (message) => {
-      if (phraseTimer) { window.clearInterval(phraseTimer); phraseTimer = null; }
-      if (message) statusEl.textContent = message;
-    };
+    const updateProgress = (message) => { if (message) statusEl.textContent = message; };
     try {
       const result = await starfield.generate(lens, {
-        onStatus: (message) => stopPhrases(message),
-        onDelta: (delta) => {
-          if (phraseTimer) stopPhrases("伽利略输出中，星点将逐一点亮…");
-          narrativeText += delta;
-          logEl.textContent = narrativeText;
-          logEl.scrollTop = logEl.scrollHeight;
-        },
-        onNode: () => stopPhrases(`正在逐点点亮，已到第 ${starfield.getNodeIds().length} 颗…`),
-        onEdge: () => { if (!phraseTimer) statusEl.textContent = `正在牵引星轨，已有 ${starfield.getNodeIds().length} 星…`; },
+        onStatus: (message) => updateProgress(message),
+        onNode: () => updateProgress(`正在逐点点亮，已到第 ${starfield.getNodeIds().length} 颗…`),
+        onEdge: () => { statusEl.textContent = `正在牵引星轨，已有 ${starfield.getNodeIds().length} 星…`; },
       });
-      starfield.recordNarrative(narrativeText);
-      stopPhrases(`完成：${result.nodeCount} 颗星 · ${result.edgeCount} 条连线`);
+      updateProgress(`完成：${result.nodeCount} 颗星 · ${result.edgeCount} 条连线`);
       updateStarSubtitle();
       renderStarSideDone(side, starfield);
     } catch (error) {
-      stopPhrases(`编织失败：${error.message}`);
+      updateProgress(`编织失败：${error.message}`);
       renderStarSideWaiting(side, `编织失败了：${error.message}`);
     } finally {
       starWeaving = false;
@@ -404,36 +391,19 @@
     const starfield = window.AI_WORLDLINE_STARFIELD;
     if (!starfield || !selectedStarNodeId) return;
     statusEl.textContent = "伽利略正在编织…";
-    let streamText = "";
     let newStarCount = 0;
     try {
       const result = await starfield.expandNode(selectedStarNodeId, {
         onStatus: (message) => { statusEl.textContent = message; },
-        onDelta: (delta) => {
-          streamText += delta;
-          const logEl = document.querySelector("[data-side-log]");
-          if (logEl) {
-            logEl.textContent = `${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`;
-            logEl.scrollTop = logEl.scrollHeight;
-          }
-        },
         onNode: () => {
           newStarCount += 1;
           statusEl.textContent = `正在点亮新星，已到第 ${newStarCount} 颗…`;
         },
       });
-      if (streamText) starfield.recordNarrative(`${starfield.getNarrative() || ""}\n\n—— 展开一片星域 ——\n${streamText}`);
       statusEl.textContent = result.added ? `新增 ${result.added} 颗星，这片星域已展开。` : "这片星域已展开，点击相邻的星继续。";
       const button = document.querySelector("[data-action='star-expand']");
       if (button) { button.disabled = true; button.textContent = "已展开"; }
-      const logEl = document.querySelector("[data-side-log]");
-      if (logEl && streamText) {
-        logEl.textContent = starfield.getNarrative();
-        logEl.scrollTop = logEl.scrollHeight;
-      }
-      updateStarSubtitle();
-      const sideTitle = document.querySelector("#starfield-side .starfield-side-who");
-      if (sideTitle) sideTitle.textContent = `镜头「${starfield.getLens()}」 · ${starfield.getNodeIds().length} 星`;
+      renderStarSide();
     } catch (error) {
       statusEl.textContent = `展开失败：${error.message}`;
     }

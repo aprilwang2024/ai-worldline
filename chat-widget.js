@@ -289,7 +289,7 @@
   root.className = "ai-chat";
   root.innerHTML = `
     <button class="ai-chat-fab" type="button" aria-label="伽利略 · AI 世界线助手" title="伽利略 · AI 世界线助手（可拖动到页面边缘吸附）">
-      <span class="ai-chat-face" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="ai-chat-face-body" cx="24" cy="24" r="20"/><g class="ai-chat-eyes"><circle cx="17.5" cy="20.5" r="2.5"/><circle cx="30.5" cy="20.5" r="2.5"/></g><path class="ai-chat-smile" d="M18.5 29.5q5.5 4.5 11 0"/></svg></span>
+      <span class="ai-chat-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9"/><path d="M5 23 27 9M16 3v4M16 25v4"/><circle cx="16" cy="16" r="2"/></svg></span>
     </button>
     <section class="ai-chat-panel" role="dialog" aria-label="伽利略 · AI 世界线助手">
       <header class="ai-chat-head">
@@ -557,8 +557,8 @@
     if (messages.length) return;
     const configured = isConfigured();
     appendMessage("assistant", configured
-      ? "我是伽利略，本站的世界线助手 🪐 我可以依据收录的全部条目和你正在看的页面回答问题。试试：\n- 世界模型这条研究线是怎么演进的？\n- 2024 年有哪些关键发布？\n- 选中页面里的一段文字，右键发给我讨论"
-      : "我是伽利略，本站的世界线助手 🪐 我可以依据收录的全部条目和你正在看的页面回答问题，但还没有配置对话模型。请点右上角 ⚙ 填入任意 OpenAI 兼容 API（端点、模型名、密钥），密钥只保存在你的浏览器本地。");
+      ? "我是伽利略，世界线的阅读助手。 我可以依据收录的全部条目和你正在看的页面回答问题。试试：\n- 世界模型这条研究线是怎么演进的？\n- 2024 年有哪些关键发布？\n- 选中页面里的一段文字，右键发给我讨论"
+      : "我是伽利略，世界线的阅读助手。 我可以依据收录的全部条目和你正在看的页面回答问题，但还没有配置对话模型。请点右上角 ⚙ 填入任意 OpenAI 兼容 API（端点、模型名、密钥），密钥只保存在你的浏览器本地。");
   }
 
   async function send() {
@@ -707,21 +707,11 @@
     else close();
   });
   function onAppStateChange() {
+    root.classList.toggle("is-starfield", getView().route === "starfield");
     if (isOpen()) refreshContextChip();
-    const view = getView();
-    if (view.route !== "starfield") {
-      starPrompted = false;
-      return;
-    }
-    // 进入星空路由：若还没有图谱，伽利略自动展开对话框询问兴趣视角
-    if (!isOpen() && !starfield()?.hasGraph?.() && !starfield()?.isBusy?.() && !starPrompted) {
-      starPrompted = true;
-      openStarPrompt();
-    }
   }
   // ---------- 星空：伽利略负责对话式询问兴趣视角，编织由星空页完成 ----------
   const starfield = () => window.AI_WORLDLINE_STARFIELD;
-  let starPrompted = false;
 
   function openStarPrompt() {
     open();
@@ -732,7 +722,7 @@
 
   function appendStarChips() {
     const suggestions = starfield()?.getSuggestions?.() || [];
-    const bubble = appendMessage("assistant", "要出发去星空了 🌌 告诉我：你想让整条世界线围绕什么层次的概念或兴趣点展开？点一个方向，我马上开始编织：");
+    const bubble = appendMessage("assistant", "选择一个研究视角，探索世界线中的关联。也可以输入你自己的主题。");
     const row = document.createElement("div");
     row.className = "ai-chat-chips";
     suggestions.forEach((label) => {
@@ -742,7 +732,7 @@
       chip.addEventListener("click", () => {
         if (starfield()?.isBusy?.()) return;
         if (!isConfigured()) {
-          appendMessage("assistant", "还没有配置对话模型：点右上角 ⚙ 填好 API 后再来编织星空吧。");
+          appendMessage("assistant", "还没有配置对话模型：点右上角 ⚙ 填好 API 后再开始探索。");
           return;
         }
         appendMessage("user", `围绕「${label}」编织星空`);
