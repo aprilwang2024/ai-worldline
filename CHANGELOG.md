@@ -2,6 +2,13 @@
 
 All material additions and corrections to AI Worldline are recorded here.
 
+## 1.3.1 — 2026-09-09
+
+- aligned Galileo with the timeline's serif headings, thin rules, restrained colors, and quiet orbit icon;
+- replaced raw graph output with readable progress and selectable node summaries;
+- kept Starfield entry unobstructed and made opening the assistant an explicit choice;
+- refreshed the README demo from the current interface.
+
 ## 1.3.0 — 2026-09-09
 
 - added Galileo chat, text-selection discussion, the AI starfield, and a scheduled source-to-draft-PR pipeline, contributed by [aszzp](https://github.com/aszzp) in [#1](https://github.com/aprilwang2024/ai-worldline/pull/1);
