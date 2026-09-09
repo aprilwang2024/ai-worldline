@@ -1,0 +1,103 @@
+name: Update watch
+
+# 自动更新管线：抓取来源 → 去重打分 → LLM 起草 → Draft PR（人工审校后合并）。
+# 需要的仓库 Secret：LLM_API_KEY（OpenAI 兼容接口密钥，如阿里云编码套餐的套餐专属 Key）。
+# 可选的仓库 Variable：LLM_BASE_URL（默认阿里云 coding 网关）、LLM_MODEL（默认 glm-5）。
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      min_new:
+        description: "入围候选少于该数量时跳过起草（定时运行默认 3）"
+        default: "1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-watch
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.repository == 'aprilwang2024/ai-worldline'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Restore inbox state
+        uses: actions/cache@v4
+        with:
+          path: data/inbox
+          key: inbox-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            inbox-v2-
+      - name: Check drafting configuration
+        id: model-config
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ -n "$LLM_API_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Sources will be collected; drafting is skipped until LLM_API_KEY is configured." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Collect sources
+        run: npm run collect
+      - name: Dedupe and rank candidates
+        run: npm run dedupe
+      - name: Draft candidate entries
+        if: steps.model-config.outputs.ready == 'true'
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          MIN_NEW: ${{ github.event_name == 'schedule' && '3' || inputs.min_new }}
+        run: node scripts/draft-candidates.mjs --min-new "$MIN_NEW" --limit 5
+      - name: Build candidate files
+        if: steps.model-config.outputs.ready == 'true'
+        run: node scripts/build-candidate-branch.mjs
+      - name: Validate candidate files
+        if: steps.model-config.outputs.ready == 'true'
+        run: npm test
+      - name: Prepare PR metadata
+        id: meta
+        run: |
+          echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          if git diff --quiet -- data/timeline.json timeline-data.js; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save collected candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-candidates
+          path: |
+            data/inbox/candidates-*.json
+            data/inbox/shortlist-*.json
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Create draft PR
+        if: steps.meta.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          base: main
+          branch: auto/candidates-${{ steps.meta.outputs.date }}
+          delete-branch: true
+          draft: true
+          title: "[Auto] 候选条目 ${{ steps.meta.outputs.date }} · 需人工审校"
+          body-path: data/inbox/pr-body-${{ steps.meta.outputs.date }}.md
+          add-paths: |
+            data/timeline.json
+            timeline-data.js

@@ -77,6 +77,14 @@ export function validateTimeline(data) {
     }
     if (Object.hasOwn(event || {}, "topic")) errors.push(`${path}.topic is deprecated; use topics[]`);
     if (event?.date && !/^\d{4}-\d{2}-\d{2}$/.test(event.date)) errors.push(`${path}.date must match YYYY-MM-DD`);
+    if (event?.date && /^\d{4}-\d{2}-\d{2}$/.test(event.date)) {
+      const date = new Date(`${event.date}T00:00:00Z`);
+      if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== event.date) errors.push(`${path}.date must be a real calendar date`);
+      const period = `${event.date.slice(0, 4)}-H${Number(event.date.slice(5, 7)) <= 6 ? 1 : 2}`;
+      if (event.period !== period) errors.push(`${path}.period must match its date`);
+    }
+    if (event.importance !== undefined && !["major", "normal"].includes(event.importance)) errors.push(`${path}.importance must be major or normal`);
+    if (event.status !== undefined && !["watching", "complete"].includes(event.status)) errors.push(`${path}.status must be watching or complete`);
 
     if (!Array.isArray(event?.concepts)) errors.push(`${path}.concepts must be an array`);
     if (!Array.isArray(event?.orgs)) errors.push(`${path}.orgs must be an array`);

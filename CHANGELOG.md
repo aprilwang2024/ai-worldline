@@ -2,6 +2,13 @@
 
 All material additions and corrections to AI Worldline are recorded here.
 
+## 1.3.0 — 2026-09-09
+
+- added Galileo chat, text-selection discussion, the AI starfield, and a scheduled source-to-draft-PR pipeline, contributed by [aszzp](https://github.com/aszzp) in [#1](https://github.com/aprilwang2024/ai-worldline/pull/1);
+- fixed model parameter compatibility, model availability feedback, direct starfield entry, custom lenses, and compact-screen controls;
+- validated generated draft dates, taxonomies, and original source URLs, prevented stale draft reuse, and added regression tests;
+- kept automated drafts behind human review; collection can run without a model key.
+
 ## 1.2.1 — 2026-09-03
 
 - narrowed the project description to foundation models, agents, and world models;
