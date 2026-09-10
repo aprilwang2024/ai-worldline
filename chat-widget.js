@@ -7,7 +7,7 @@
  * Chat Completions 接口完成，端点与密钥来自 chat-config.js，
  * 访客也可以在面板设置里填自己的密钥（仅存 localStorage）。
  *
- * 交互：伽利略平时是一个可拖动的头像吸附在页面四周边缘（位置持久化），
+ * 交互：伽利略平时是一个可自由拖动的头像（位置持久化），
  * 点击后从按钮所在方位展开为对话框；选中页面文字后右键可选择「让伽利略讨论」。
  */
 (function () {
@@ -288,7 +288,7 @@
   const root = document.createElement("div");
   root.className = "ai-chat";
   root.innerHTML = `
-    <button class="ai-chat-fab" type="button" aria-label="伽利略 · AI 世界线助手" title="伽利略 · AI 世界线助手（可拖动到页面边缘吸附）">
+    <button class="ai-chat-fab" type="button" aria-label="伽利略 · AI 世界线助手" title="伽利略 · AI 世界线助手（可自由拖动，位置自动保存）">
       <span class="galileo-avatar" aria-hidden="true"><img src="./assets/galileo-avatar.png" alt="" draggable="false" /></span>
     </button>
     <section class="ai-chat-panel" role="dialog" aria-label="伽利略 · AI 世界线助手">
@@ -333,68 +333,62 @@
     contextChip.textContent = `当前页面：${describeView(getView())}`;
   }
 
-  // ---------- 边缘吸附与拖拽（支持左/右/上/下四边） ----------
+  // ---------- 自由拖拽与位置保存 ----------
   const DOCK_KEY = "ai-worldline-chat-dock";
 
-  function clampRatio(value) {
-    return Math.min(0.94, Math.max(0.06, value));
+  function avatarBounds() {
+    const size = fab.offsetWidth || (window.innerWidth <= 760 ? 50 : 56);
+    return { x: Math.max(0, window.innerWidth - size), y: Math.max(0, window.innerHeight - size) };
   }
 
-  function loadDock() {
+  function clampPosition(value, maximum) {
+    const margin = Math.min(12, maximum / 2);
+    return Math.min(maximum - margin, Math.max(margin, value));
+  }
+
+  function loadPosition() {
+    const bounds = avatarBounds();
     try {
       const saved = JSON.parse(localStorage.getItem(DOCK_KEY) || "null");
-      const edges = ["left", "right", "top", "bottom"];
-      if (saved && edges.includes(saved.edge) && typeof saved.ratio === "number") {
-        return { edge: saved.edge, ratio: clampRatio(saved.ratio) };
+      if (saved?.version === 2 && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+        return { x: Math.min(1, Math.max(0, saved.x)), y: Math.min(1, Math.max(0, saved.y)) };
       }
-      if (saved && edges.includes(saved.side) && typeof saved.ratio === "number") {
-        return { edge: saved.side, ratio: clampRatio(saved.ratio) };
+      // Convert previous edge-based preferences without moving the saved avatar.
+      const edge = saved?.edge || saved?.side;
+      if (["left", "right", "top", "bottom"].includes(edge) && Number.isFinite(saved.ratio)) {
+        const ratio = Math.min(.94, Math.max(.06, saved.ratio));
+        const size = window.innerWidth - bounds.x;
+        const left = edge === "left" ? 20 : edge === "right" ? bounds.x - 20 : ratio * window.innerWidth - size / 2;
+        const top = edge === "top" ? 20 : edge === "bottom" ? bounds.y - 20 : ratio * window.innerHeight - size / 2;
+        return { x: clampPosition(left, bounds.x) / (bounds.x || 1), y: clampPosition(top, bounds.y) / (bounds.y || 1) };
       }
     } catch (error) { /* 隐私模式下使用默认位置 */ }
-    return { edge: "right", ratio: 0.64 };
+    return { x: Math.max(0, bounds.x - 20) / (bounds.x || 1), y: Math.max(0, bounds.y - 48) / (bounds.y || 1) };
   }
 
-  let dock = loadDock();
+  let position = loadPosition();
   let dragState = null;
 
   function isOpen() {
     return panel.classList.contains("is-open");
   }
 
-  function applyDock({ snap = false } = {}) {
-    root.classList.toggle("dock-left", dock.edge === "left");
-    root.classList.toggle("dock-right", dock.edge === "right");
-    root.classList.toggle("dock-top", dock.edge === "top");
-    root.classList.toggle("dock-bottom", dock.edge === "bottom");
-    // Empty inline values would reactivate the stylesheet's top: 60% / right: 20px.
-    // Explicit auto prevents the opposite edge from overriding bottom/left docking.
-    ["top", "left", "right", "bottom"].forEach((prop) => { fab.style[prop] = "auto"; });
-    const size = fab.offsetWidth || 54;
-    const pad = 20;
-    if (dock.edge === "left" || dock.edge === "right") {
-      const top = Math.min(window.innerHeight - size - 12, Math.max(12, dock.ratio * window.innerHeight - size / 2));
-      fab.style.top = `${Math.round(top)}px`;
-      fab.style[dock.edge] = `${pad}px`;
-    } else {
-      const left = Math.min(window.innerWidth - size - 12, Math.max(12, dock.ratio * window.innerWidth - size / 2));
-      fab.style.left = `${Math.round(left)}px`;
-      fab.style[dock.edge] = `${pad}px`;
-    }
-    if (snap) {
-      fab.classList.add("is-snapping");
-      window.setTimeout(() => fab.classList.remove("is-snapping"), 380);
-    }
-    let originX;
-    let originY;
-    if (dock.edge === "left") { originX = "0%"; originY = dock.ratio <= 0.5 ? "top" : "bottom"; }
-    else if (dock.edge === "right") { originX = "100%"; originY = dock.ratio <= 0.5 ? "top" : "bottom"; }
-    else if (dock.edge === "top") { originY = "top"; originX = dock.ratio <= 0.5 ? "0%" : "100%"; }
-    else { originY = "bottom"; originX = dock.ratio <= 0.5 ? "0%" : "100%"; }
-    panel.style.transformOrigin = window.innerWidth <= 760 ? "50% 100%" : `${originX} ${originY}`;
+  function applyPosition() {
+    const bounds = avatarBounds();
+    // Explicit auto prevents the old stylesheet top/right anchors from taking over.
+    fab.style.right = "auto";
+    fab.style.bottom = "auto";
+    fab.style.left = `${Math.round(clampPosition(position.x * bounds.x, bounds.x))}px`;
+    fab.style.top = `${Math.round(clampPosition(position.y * bounds.y, bounds.y))}px`;
+    root.classList.toggle("dock-left", position.x < .5);
+    root.classList.toggle("dock-right", position.x >= .5);
+    root.classList.remove("dock-top");
+    root.classList.remove("dock-bottom");
+    panel.style.transformOrigin = window.innerWidth <= 760 ? "50% 100%" : `${position.x < .5 ? "0%" : "100%"} bottom`;
   }
 
   function open(prefill = "") {
-    applyDock();
+    applyPosition();
     panel.classList.add("is-open");
     panel.setAttribute("aria-hidden", "false");
     fab.classList.add("is-hidden");
@@ -428,9 +422,9 @@
       fab.classList.add("is-dragging");
     }
     if (!dragState.moved) return;
-    const size = fab.offsetWidth || 54;
-    fab.style.left = `${Math.round(Math.min(window.innerWidth - size - 12, Math.max(12, dragState.rect.left + deltaX)))}px`;
-    fab.style.top = `${Math.round(Math.min(window.innerHeight - size - 12, Math.max(12, dragState.rect.top + deltaY)))}px`;
+    const bounds = avatarBounds();
+    fab.style.left = `${Math.round(clampPosition(dragState.rect.left + deltaX, bounds.x))}px`;
+    fab.style.top = `${Math.round(clampPosition(dragState.rect.top + deltaY, bounds.y))}px`;
     fab.style.right = "auto";
     fab.style.bottom = "auto";
   }
@@ -443,6 +437,7 @@
 
   function onDragEnd(event) {
     if (!dragState || event.pointerId !== dragState.pointerId) return;
+    onDragMove(event);
     endDragListeners();
     const wasDrag = dragState.moved;
     fab.classList.remove("is-dragging");
@@ -451,25 +446,17 @@
       open();
       return;
     }
-    const distances = {
-      left: event.clientX,
-      right: window.innerWidth - event.clientX,
-      top: event.clientY,
-      bottom: window.innerHeight - event.clientY,
-    };
-    dock.edge = Object.keys(distances).reduce((a, b) => (distances[a] <= distances[b] ? a : b));
-    dock.ratio = clampRatio((dock.edge === "left" || dock.edge === "right")
-      ? event.clientY / window.innerHeight
-      : event.clientX / window.innerWidth);
-    try { localStorage.setItem(DOCK_KEY, JSON.stringify(dock)); } catch (error) { /* 忽略持久化失败 */ }
-    applyDock({ snap: true });
+    const bounds = avatarBounds();
+    position = { x: parseFloat(fab.style.left) / (bounds.x || 1), y: parseFloat(fab.style.top) / (bounds.y || 1) };
+    try { localStorage.setItem(DOCK_KEY, JSON.stringify({ version: 2, ...position })); } catch (error) { /* 忽略持久化失败 */ }
+    applyPosition();
   }
 
   function onDragCancel() {
     endDragListeners();
     fab.classList.remove("is-dragging");
     dragState = null;
-    applyDock({ snap: true });
+    applyPosition();
   }
 
   fab.addEventListener("pointerdown", (event) => {
@@ -482,7 +469,7 @@
   });
   // 键盘激活（Enter/Space 触发的 click 没有 detail），避免与 pointerup 重复打开
   fab.addEventListener("click", (event) => { if (event.detail === 0) open(); });
-  window.addEventListener("resize", () => applyDock());
+  window.addEventListener("resize", () => { if (!dragState) applyPosition(); });
 
   // ---------- 选中文本 → 右键发送给伽利略 ----------
   let menuSelection = "";
@@ -785,7 +772,7 @@
   window.addEventListener("popstate", onAppStateChange);
 
   updateWelcome();
-  applyDock({ snap: false });
+  applyPosition();
   document.body.append(root);
   document.body.append(contextMenu);
   window.AI_WORLDLINE_CHAT = {

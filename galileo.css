@@ -11,6 +11,7 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  transition: opacity .2s ease, transform .18s ease;
 }
 .ai-chat-fab:hover, .ai-chat-fab.is-dragging { background: transparent; box-shadow: none; }
 .galileo-avatar {
@@ -84,3 +85,5 @@
 @media (prefers-reduced-motion: reduce) {
   .ai-chat .galileo-avatar { animation: none !important; }
 }
+
+.ai-chat-fab.is-dragging { transform: none; transition: none; }

@@ -4,15 +4,12 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 const source = await readFile(new URL('../chat-widget.js', import.meta.url), 'utf8');
-const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-const baseline = styles.match(/\.ai-chat-fab\s*\{([^}]+)\}/)[1];
-const cssTop = baseline.match(/\btop:\s*([^;]+)/)[1];
-const cssRight = baseline.match(/\bright:\s*([^;]+)/)[1];
 const start = source.indexOf('  const DOCK_KEY =');
 const end = source.indexOf('  // ---------- 选中文本', start);
+const key = 'ai-worldline-chat-dock';
 
 function harness(saved = new Map()) {
-  const listeners = new Map();
+  const listeners = new Map(), fabListeners = new Map();
   const classes = () => {
     const values = new Set();
     return {
@@ -21,60 +18,97 @@ function harness(saved = new Map()) {
       contains: name => values.has(name),
     };
   };
-  const fab = { style: {}, offsetWidth: 56, classList: classes(), addEventListener() {} };
+  const fab = { style: {}, offsetWidth: 56, classList: classes(),
+    addEventListener: (type, fn) => fabListeners.set(type, fn),
+    getBoundingClientRect: () => ({ left: parseFloat(fab.style.left), top: parseFloat(fab.style.top) }),
+  };
   const panel = { style: {}, classList: classes(), setAttribute() {} };
-  const window = { innerWidth: 1200, innerHeight: 800, setTimeout() {},
-    addEventListener: (type, fn) => listeners.set(type, fn), removeEventListener() {} };
+  const window = { innerWidth: 1200, innerHeight: 800,
+    addEventListener: (type, fn) => listeners.set(type, fn),
+    removeEventListener: (type, fn) => { if (listeners.get(type) === fn) listeners.delete(type); },
+  };
   const context = vm.createContext({ fab, panel, root: { classList: classes() }, window,
     localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) },
     settingsForm: {}, refreshContextChip() {}, input: { focus() {} }, autosize() {},
   });
   vm.runInContext(source.slice(start, end), context);
-  context.applyDock();
-  return { context, fab, window, listeners, saved,
-    drag(x, y) {
-      vm.runInContext('dragState = { pointerId: 1, moved: true };', context);
-      context.onDragEnd({ pointerId: 1, clientX: x, clientY: y });
+  context.applyPosition();
+  const event = (x, y) => ({ pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: y, preventDefault() {} });
+  return { context, fab, panel, window, listeners, saved, event,
+    point: () => [parseFloat(fab.style.left), parseFloat(fab.style.top)],
+    begin(offsetX = 17, offsetY = 11) {
+      const rect = fab.getBoundingClientRect();
+      fabListeners.get('pointerdown')(event(rect.left + offsetX, rect.top + offsetY));
     },
-    // Resolves the fixed-size element's vertical position against the real CSS fallback.
-    // When top and bottom are both specified, top wins: the original regression.
-    top() {
-      const top = fab.style.top || cssTop;
-      if (top !== 'auto') return top.endsWith('%') ? parseFloat(top) * window.innerHeight / 100 : parseFloat(top);
-      return window.innerHeight - fab.offsetWidth - parseFloat(fab.style.bottom);
+    drag(left, top) {
+      this.begin();
+      context.onDragMove(event(left + 17, top + 11));
+      context.onDragEnd(event(left + 17, top + 11));
     },
   };
 }
 
-test('dragging toward the bottom-right keeps the avatar at the bottom, not CSS top:60%', () => {
+test('release stays at the actual drop position, preserving the grab offset without edge snapping', () => {
   const h = harness();
-  h.drag(1100, 780);
-  assert.equal(h.top(), 724);
-  assert.equal(h.fab.style.top, 'auto');
-  assert.equal(h.fab.style.right, 'auto');
-  assert.equal(h.fab.style.bottom, '20px');
-  assert.notEqual(h.top(), 480);
-});
-
-test('bottom docking survives refresh, chat open/close, and viewport resize', () => {
-  const before = harness(); before.drag(1100, 780);
-  const h = harness(before.saved);
-  assert.equal(h.top(), 724);
-  h.context.open(); h.context.close();
-  assert.equal(h.top(), 724);
-  h.window.innerHeight = 600; h.listeners.get('resize')();
-  assert.equal(h.top(), 524);
-});
-
-test('switching among all four edges cancels the opposite anchors', () => {
-  const h = harness();
-  for (const [x, y, edge, opposite] of [
-    [1100, 780, 'bottom', 'top'], [20, 300, 'left', 'right'],
-    [600, 20, 'top', 'bottom'], [1180, 700, 'right', 'left'],
-  ]) {
-    h.drag(x, y);
-    assert.equal(h.fab.style[edge], '20px');
-    assert.equal(h.fab.style[opposite], 'auto');
+  for (const point of [[640, 470], [1020, 610], [310, 250], [40, 620]]) {
+    h.drag(...point);
+    assert.deepEqual(h.point(), point);
+    assert.equal(h.fab.style.right, 'auto');
+    assert.equal(h.fab.style.bottom, 'auto');
+    assert.equal(h.panel.classList.contains('is-open'), false);
   }
-  assert.equal(cssRight, '20px');
+});
+
+test('final pointerup coordinates are applied even without a final pointermove', () => {
+  const h = harness(); h.begin();
+  h.context.onDragEnd(h.event(777 + 17, 555 + 11));
+  assert.deepEqual(h.point(), [777, 555]);
+});
+
+test('free position survives reload and opening/closing the conversation', () => {
+  const before = harness(); before.drag(760, 530);
+  const h = harness(before.saved);
+  assert.deepEqual(h.point(), [760, 530]);
+  h.context.open(); h.context.close();
+  assert.deepEqual(h.point(), [760, 530]);
+  assert.equal(JSON.parse(h.saved.get(key)).version, 2);
+});
+
+test('viewport resizing retains relative placement and recovers the original position', () => {
+  const h = harness(); h.drag(858, 558);
+  h.window.innerWidth = 400; h.window.innerHeight = 500; h.fab.offsetWidth = 50;
+  h.listeners.get('resize')();
+  assert.deepEqual(h.point(), [263, 338]);
+  h.window.innerWidth = 1200; h.window.innerHeight = 800; h.fab.offsetWidth = 56;
+  h.listeners.get('resize')();
+  assert.deepEqual(h.point(), [858, 558]);
+});
+
+test('screen boundaries constrain the whole avatar without a forced docking edge', () => {
+  const h = harness(); h.drag(-500, -500);
+  assert.deepEqual(h.point(), [12, 12]);
+  h.drag(2000, 2000);
+  assert.deepEqual(h.point(), [1132, 732]);
+});
+
+test('legacy bottom docking is restored at its previous height and can then be moved freely', () => {
+  const h = harness(new Map([[key, JSON.stringify({ edge: 'bottom', ratio: .9 })]]));
+  assert.deepEqual(h.point(), [1052, 724]);
+  h.drag(600, 400);
+  assert.deepEqual(h.point(), [600, 400]);
+});
+
+test('cancelled drag restores the last saved position; clicking still opens the assistant', () => {
+  const h = harness(); h.drag(650, 450); h.begin();
+  h.context.onDragMove(h.event(200, 200)); h.context.onDragCancel();
+  assert.deepEqual(h.point(), [650, 450]);
+  h.begin(); h.context.onDragEnd(h.event(667, 461));
+  assert.equal(h.panel.classList.contains('is-open'), true);
+  assert.deepEqual(h.point(), [650, 450]);
+});
+
+test('invalid saved coordinates fall back to a visible position', () => {
+  const h = harness(new Map([[key, '{"version":2,"x":null,"y":"bad"}']]));
+  assert(h.point().every(Number.isFinite));
+  assert.deepEqual(h.point(), [1124, 696]);
 });
