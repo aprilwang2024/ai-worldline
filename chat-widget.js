@@ -7,7 +7,7 @@
  * Chat Completions 接口完成，端点与密钥来自 chat-config.js，
  * 访客也可以在面板设置里填自己的密钥（仅存 localStorage）。
  *
- * 交互：伽利略平时是一个可拖动的圆形按钮吸附在页面左右边缘（位置持久化），
+ * 交互：伽利略平时是一个可拖动的头像吸附在页面四周边缘（位置持久化），
  * 点击后从按钮所在方位展开为对话框；选中页面文字后右键可选择「让伽利略讨论」。
  */
 (function () {
@@ -366,7 +366,9 @@
     root.classList.toggle("dock-right", dock.edge === "right");
     root.classList.toggle("dock-top", dock.edge === "top");
     root.classList.toggle("dock-bottom", dock.edge === "bottom");
-    ["top", "left", "right", "bottom"].forEach((prop) => { fab.style[prop] = ""; });
+    // Empty inline values would reactivate the stylesheet's top: 60% / right: 20px.
+    // Explicit auto prevents the opposite edge from overriding bottom/left docking.
+    ["top", "left", "right", "bottom"].forEach((prop) => { fab.style[prop] = "auto"; });
     const size = fab.offsetWidth || 54;
     const pad = 20;
     if (dock.edge === "left" || dock.edge === "right") {
@@ -429,8 +431,8 @@
     const size = fab.offsetWidth || 54;
     fab.style.left = `${Math.round(Math.min(window.innerWidth - size - 12, Math.max(12, dragState.rect.left + deltaX)))}px`;
     fab.style.top = `${Math.round(Math.min(window.innerHeight - size - 12, Math.max(12, dragState.rect.top + deltaY)))}px`;
-    fab.style.right = "";
-    fab.style.bottom = "";
+    fab.style.right = "auto";
+    fab.style.bottom = "auto";
   }
 
   function endDragListeners() {
