@@ -289,11 +289,11 @@
   root.className = "ai-chat";
   root.innerHTML = `
     <button class="ai-chat-fab" type="button" aria-label="伽利略 · AI 世界线助手" title="伽利略 · AI 世界线助手（可拖动到页面边缘吸附）">
-      <span class="ai-chat-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9"/><path d="M5 23 27 9M16 3v4M16 25v4"/><circle cx="16" cy="16" r="2"/></svg></span>
+      <span class="galileo-avatar" aria-hidden="true"><img src="./assets/galileo-avatar.png" alt="" draggable="false" /></span>
     </button>
     <section class="ai-chat-panel" role="dialog" aria-label="伽利略 · AI 世界线助手">
       <header class="ai-chat-head">
-        <div class="ai-chat-title">${icons.chat}<span>伽利略 · 世界线助手</span></div>
+        <div class="ai-chat-title"><span class="galileo-avatar" aria-hidden="true"><img src="./assets/galileo-avatar.png" alt="" draggable="false" /></span><span>伽利略 · 世界线助手</span></div>
         <div class="ai-chat-head-actions">
           <button class="ai-chat-icon-button" type="button" data-chat-action="settings" aria-label="对话设置" title="对话设置">${icons.gear}</button>
           <button class="ai-chat-icon-button" type="button" data-chat-action="clear" aria-label="清空对话" title="清空对话">${icons.trash}</button>
@@ -722,7 +722,7 @@
 
   function appendStarChips() {
     const suggestions = starfield()?.getSuggestions?.() || [];
-    const bubble = appendMessage("assistant", "选择一个研究视角，探索世界线中的关联。也可以输入你自己的主题。");
+    const bubble = appendMessage("assistant", "换个镜头，看见新的关联。选一个方向，或写下你感兴趣的主题，我来编织星空。");
     const row = document.createElement("div");
     row.className = "ai-chat-chips";
     suggestions.forEach((label) => {
